@@ -1,0 +1,6 @@
+// header
+//
+//= require "a"
+//= require "b"
+
+var A = {};
