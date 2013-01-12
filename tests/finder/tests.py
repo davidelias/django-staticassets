@@ -38,3 +38,9 @@ class AssetFinderTest(TestCase):
 
     def test_find_asset_index(self):
         self.assertEqual('models/index.js', self.finder.find('models').name)
+
+    def test_cached_assets_equal(self):
+        asset1 = self.finder.find('app.js')
+        asset2 = self.finder.find('app.js')
+
+        self.assertTrue(asset1 is asset2)

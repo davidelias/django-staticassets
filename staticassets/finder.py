@@ -2,28 +2,33 @@ import os
 import re
 import json
 
-from django.contrib.staticfiles.finders import get_finders, get_finder
+from django.contrib.staticfiles.finders import BaseFinder, get_finders, get_finder
 from django.utils.functional import LazyObject
 
-from .assets import Asset, AssetBundle, AssetAttributes, AssetNotFound
+from .assets import Asset, AssetAttributes, AssetNotFound
 from . import settings
 
 
-class BaseFinder(object):
-    assets = {}
+class BaseAssetFinder(BaseFinder):
+
+    def __init__(self):
+        self.assets = {}
 
     def __getitem__(self, path):
         return self.find(path, bundle=True)
 
-    def find(self, path, bundle=False, **kwargs):
-        # TODO: apply cache here
-        try:
-            name, storage = self.resolve(path)
-        except AssetNotFound:
-            return None
-        return AssetBundle(name, storage, self) if bundle else Asset(name, storage, self)
+    def find(self, path, bundle=False):
+        asset = self.assets.get(path)
+        if not asset or asset.expired:
+            try:
+                name, storage = self.resolve(path)
+            except AssetNotFound:
+                return None
+            asset = Asset.create(name, storage, self, bundle=bundle)
+            self.assets[path] = asset
+        return asset
 
-    def resolve(self, path, base_dir=None):
+    def resolve(self, path):
         attrs = AssetAttributes(path)
         for path in attrs.search_paths:
             regex = self.get_search_regex(path)
@@ -63,57 +68,11 @@ class BaseFinder(object):
         raise NotImplementedError()
 
 
-class StaticFilesFinder(BaseFinder):
+class StaticFilesFinder(BaseAssetFinder):
     def list(self):
         for finder in get_finders():
             for result in finder.list(None):
                 yield result
-
-
-class AssetFinder(object):
-
-    def find(self, path, bundle=False):
-        attrs = AssetAttributes(path)
-        for path in attrs.search_paths:
-            result = self.find_in_finders(path)
-            if result:
-                return AssetBundle(*result) if bundle else Asset(*result)
-        raise AssetNotFound('File "{0}" not found. Tried "{1}"'.format(attrs.path, '", "'.join(attrs.search_paths)))
-
-    def find_in_finders(self, path):
-        for finder in get_finders():
-            regex = self.get_search_regex(path)
-            for name, storage in finder.list(path):
-                if regex.search(name):
-                    return name, storage
-        return None
-
-    def get_asset(self, path):
-        pass
-
-    def cache_key(path, **options):
-        return '{path}:{bundle}'.format(path=path, **options)
-
-    @property
-    def extensions(self):
-        for extension in settings.MIMETYPES.keys():
-            yield extension
-        for extension in settings.COMPILERS.keys():
-            yield extension
-
-    def get_search_regex(self, path):
-        available_extensions = list(self.extensions)
-        basename = os.path.basename(path)
-        for ext in re.findall(r'\.[^.]+', basename):
-            if ext in available_extensions:
-                basename = basename.replace(ext, '')
-        extension_pattern = '|'.join([r'\{0}'.format(ext) for ext in available_extensions])
-        path = os.path.join(os.path.dirname(path), basename)
-        return re.compile(r'{0}({1})*$'.format(path, extension_pattern))
-
-
-def find(path):
-    return default_finder.find(path)
 
 
 class ConfiguredFinder(LazyObject):
@@ -121,3 +80,7 @@ class ConfiguredFinder(LazyObject):
         self._wrapped = get_finder(settings.FINDER)
 
 default_finder = ConfiguredFinder()
+
+
+def find(*args, **kwargs):
+    return default_finder.find(*args, **kwargs)
