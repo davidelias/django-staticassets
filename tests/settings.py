@@ -12,17 +12,21 @@ DATABASES = {
 }
 
 INSTALLED_APPS = (
+    'django_nose',
     'django.contrib.staticfiles',
-    'tests.assets',
-    'tests.finder',
-    'tests.directive_processor',
+    'staticassets',
 )
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'fixtures', 'default'),
 )
 
 STATICASSETS_COMPILERS = {
-    '.coffee': 'staticassets.compilers.CoffeeScriptCompiler',
-    '.sass': 'staticassets.compilers.SassCompiler'
+    '.coffee': 'staticassets.compilers.CoffeeScriptCompiler'
 }
+
+STATICASSETS_DEBUG = True
+
+STATIC_URL = '/static/'

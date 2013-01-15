@@ -1,6 +1,6 @@
 from staticassets.processors.directive import DirectiveProcessor
 
-from ..test import TestCase
+from .test import TestCase
 
 
 class DirectiveProcessorTest(TestCase):

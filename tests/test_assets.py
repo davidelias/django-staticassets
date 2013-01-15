@@ -3,7 +3,7 @@ import os
 from staticassets import AssetAttributes
 from staticassets.finder import StaticFilesFinder
 
-from ..test import TestCase
+from .test import TestCase
 
 
 class FindAssetTest(TestCase):
@@ -16,6 +16,11 @@ class FindAssetTest(TestCase):
 
     def test_attributes_extensions(self):
         self.assertEqual(['.js', '.coffee'], AssetAttributes('foo.js.coffee').extensions)
+
+    def test_attributes_format_extension(self):
+        self.assertEqual('.js', AssetAttributes('foo/bar.js.coffee').format_extension)
+        self.assertEqual('.js', AssetAttributes('foo/bar.min.coffee').format_extension)
+        self.assertEqual('.css', AssetAttributes('foo/bar.sass').format_extension)
 
     def test_attributes_path_without_extensions(self):
         self.assertEqual('foo/bar', AssetAttributes('foo/bar.js.coffee').path_without_extensions)
@@ -30,6 +35,11 @@ class FindAssetTest(TestCase):
 
     def test_asset_path(self):
         self.assertEqual(self.fixture_path('models/index.js'), self.finder.find('models').path)
+
+    def test_asset_url(self):
+        self.assertEqual('/static/style.css', self.finder.find('style').url)
+        self.assertEqual('/static/foo.js', self.finder.find('foo.coffee').url)
+        self.assertEqual('/static/foo.js', self.finder.find('foo.js').url)
 
     def test_dependencies(self):
         asset = self.finder.find('app.js')

@@ -1,7 +1,7 @@
 from staticassets.finder import StaticFilesFinder, default_finder as staticassets_finder
 from staticassets.assets import AssetNotFound
 
-from ..test import TestCase
+from .test import TestCase
 
 
 class AssetFinderTest(TestCase):
