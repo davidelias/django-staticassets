@@ -13,6 +13,7 @@ class FindAssetTest(TestCase):
     def test_attributes_search_paths(self):
         self.assertEqual(['index.js', 'index/component.json'], AssetAttributes('index.js').search_paths)
         self.assertEqual(['foo.js', 'foo/index.js', 'foo/component.json'], AssetAttributes('foo.js').search_paths)
+        self.assertEqual(['bar', 'bar/index', 'bar/component.json'], AssetAttributes('bar').search_paths)
 
     def test_attributes_extensions(self):
         self.assertEqual(['.js', '.coffee'], AssetAttributes('foo.js.coffee').extensions)
@@ -24,6 +25,7 @@ class FindAssetTest(TestCase):
 
     def test_attributes_path_without_extensions(self):
         self.assertEqual('foo/bar', AssetAttributes('foo/bar.js.coffee').path_without_extensions)
+        self.assertEqual('foo', AssetAttributes('foo').path_without_extensions)
 
     def test_asset_source(self):
         self.assertEqual('//= require models\n\nvar App = {Models: {}};\n', self.finder.find('app.js').source)

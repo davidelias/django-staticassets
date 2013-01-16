@@ -1,9 +1,10 @@
 import os
 import re
 
+from django.contrib.staticfiles.storage import StaticFilesStorage
 from django.utils.functional import cached_property
 
-from . import utils, processors, settings
+from . import utils, processors, compilers, settings
 
 
 class AssetNotFound(Exception):
@@ -26,46 +27,71 @@ class AssetAttributes(object):
         return paths
 
     @property
-    def path_without_extensions(self):
-        return self.path[:-len(''.join(self.extensions))]
+    def dirname(self):
+        return os.path.dirname(self.path)
 
-    @property
+    @cached_property
+    def path_without_extensions(self):
+        index = len(''.join(self.extensions))
+        return self.path[:-index] if index > 0 else self.path
+
+    @cached_property
     def extensions(self):
         return re.findall(r'\.[^.]+', os.path.basename(self.path))
 
-    @property
+    @cached_property
+    def format_extension(self):
+        for ext in reversed(self.extensions):
+            if ext in settings.MIMETYPES and not compilers.get(ext):
+                return ext
+        for ext, mimetype in settings.MIMETYPES.items():
+            if mimetype == self.compiler_content_type:
+                return ext
+
+    @cached_property
     def content_type(self):
-        for extension in self.extensions:
-            if settings.MIMETYPES.get(extension):
-                return settings.MIMETYPES.get(extension)
+        for ext in self.extensions:
+            if settings.MIMETYPES.get(ext):
+                return settings.MIMETYPES.get(ext)
+
+    @cached_property
+    def compiler_content_type(self):
+        for compiler in self.compilers:
+            if compiler.content_type:
+                return compiler.content_type
+
+    @property
+    def compilers(self):
+        for ext in self.extensions:
+            compiler = compilers.get(ext)
+            if compiler:
+                yield compiler
 
     @property
     def preprocessors(self):
-        return processors.get_pre(self.content_type)
+        return processors.pre(self.content_type)
 
     @property
     def postprocessors(self):
-        return processors.get_post(self.content_type)
+        return processors.post(self.content_type)
+
+    @property
+    def bundle_processors(self):
+        return processors.bundle(self.content_type)
 
     @property
     def processors(self):
-        return self.preprocessors + self.postprocessors
+        return self.preprocessors + list(self.compilers) + self.postprocessors
 
 
 class Asset(object):
 
     def __init__(self, name, storage, finder, content_type=None):
         self.name = name
-        self.storage = storage
+        self.storage = StaticFilesStorage(location=storage.location)
         self.finder = finder
         self.content_type = content_type
-        self.attributes = AssetAttributes(self.path)
-        self.mtime = os.path.getmtime(self.path)
-        self.dependencies = []
-        self.requirements = []
-        self.depend_on_asset(self)
-
-        self.process()
+        self.attributes = AssetAttributes(name)
 
     def __repr__(self):
         return '<%s path=%s>' % (self.__class__.__name__, self.path)
@@ -75,6 +101,11 @@ class Asset(object):
             for asset in requirement:
                 yield asset
         yield self
+
+    @staticmethod
+    def create(*args, **kwargs):
+        bundle = kwargs.pop('bundle') is True
+        return AssetBundle(*args, **kwargs) if bundle else AssetProcessed(*args, **kwargs)
 
     @cached_property
     def source(self):
@@ -89,12 +120,22 @@ class Asset(object):
     content = property(_get_content, _set_content)
 
     @property
+    def size(self):
+        return len(self.content)
+
+    @property
     def digest(self):
         return utils.get_digest(self.content)
 
     @property
     def path(self):
         return self.storage.path(self.name)
+
+    @property
+    def url(self):
+        extension = self.attributes.format_extension
+        path = self.attributes.path_without_extensions
+        return self.storage.url(path + extension)
 
     @property
     def expired(self):
@@ -140,7 +181,8 @@ class Asset(object):
 
     def require_asset(self, asset):
         if not isinstance(asset, Asset):
-            asset = self.finder.find(asset)
+            asset = self.finder.find(asset, bundle=False)
+        print 'require_asset ==', asset
         self.requirements.append(asset)
         self.depend_on_asset(asset)
 
@@ -156,27 +198,36 @@ class Asset(object):
     def __setstate__(self, state):
         self.content = state['content']
         self.dependencies = state['dependencies']
-        self.requirments = state['requirements']
+        self.requirements = state['requirements']
 
 
-class AssetBundle(object):
-    pass
+class AssetProcessed(Asset):
+    def __init__(self, *args, **kwargs):
+        super(AssetProcessed, self).__init__(*args, **kwargs)
 
-# class AssetBundle(Asset):
-#     def __init__(self, *args, **kwargs):
-#         super(AssetBundle, self).__init__(*args, **kwargs)
+        self.mtime = os.path.getmtime(self.path)
+        self.dependencies = []
+        self.requirements = []
+        self.depend_on_asset(self)
 
-#         self.asset = finder.find(self.name, bundle=False)
-#         self.dependencies = self.asset.dependencies
-#         self.requirements = self.asset.requirements
-#         self.content = ''.join([asset.content for asset in self.requirements])
-#         self.mtime = max([d[1] for d in self.dependencies])
+        self.process()
 
-#         self.process(processors=self.attributes.bundle_processors)
 
-#     def __iter__(self):
-#         return iter(self.requirements)
+class AssetBundle(Asset):
+    def __init__(self, *args, **kwargs):
+        super(AssetBundle, self).__init__(*args, **kwargs)
 
-#     @property
-#     def expired(self):
-#         return self.asset.expired
+        self.asset = self.finder.find(self.name, bundle=False)
+        self.dependencies = self.asset.dependencies
+        self.requirements = self.asset.requirements
+        self.content = ''.join([asset.content for asset in self.asset])
+        self.mtime = max([d[1] for d in self.dependencies])
+
+        self.process(processors=self.attributes.bundle_processors)
+
+    def __iter__(self):
+        return iter(self.asset)
+
+    @property
+    def expired(self):
+        return self.asset.expired
