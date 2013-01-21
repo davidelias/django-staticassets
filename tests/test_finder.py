@@ -12,7 +12,11 @@ class AssetFinderTest(TestCase):
         self.assertIsNotNone(staticassets_finder)
 
     def test_available_extensions(self):
-        self.assertItemsEqual(['.js', '.css', '.coffee', '.sass'], self.finder.extensions)
+        self.assertItemsEqual([
+            '.js', '.css',
+            '.ejs', '.jst', '.coffee',
+            '.sass', '.scss', '.styl', '.less'
+        ], self.finder.extensions)
 
     def test_find_pattern(self):
         self.assertRegexpMatches('some/style.css', self.finder.get_search_regex('some/style.css'))

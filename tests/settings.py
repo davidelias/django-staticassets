@@ -21,11 +21,9 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'fixtures', 'default'),
+    os.path.join(BASE_DIR, 'fixtures', 'compilers'),
+    os.path.join(BASE_DIR, 'fixtures', 'directives'),
 )
-
-STATICASSETS_COMPILERS = {
-    '.coffee': 'staticassets.compilers.CoffeeScriptCompiler'
-}
 
 STATICASSETS_DEBUG = True
 
