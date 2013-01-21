@@ -2,14 +2,15 @@ import os
 import re
 import json
 
-from django.contrib.staticfiles.finders import BaseFinder, get_finders, get_finder
+from django.core.files.storage import FileSystemStorage
+from django.contrib.staticfiles import finders
 from django.utils.functional import LazyObject
 
 from .assets import Asset, AssetAttributes, AssetNotFound
 from . import settings
 
 
-class BaseAssetFinder(BaseFinder):
+class BaseAssetFinder(finders.BaseFinder):
 
     def __init__(self):
         self.assets = {}
@@ -29,6 +30,10 @@ class BaseAssetFinder(BaseFinder):
         return asset
 
     def resolve(self, path):
+        exact = self.resolve_exact(path)
+        if exact:
+            return exact
+
         attrs = AssetAttributes(path)
         for path in attrs.search_paths:
             regex = self.get_search_regex(path)
@@ -67,17 +72,25 @@ class BaseAssetFinder(BaseFinder):
     def list(self):
         raise NotImplementedError()
 
+    def resolve_exact(self):
+        raise NotImplementedError()
+
 
 class StaticFilesFinder(BaseAssetFinder):
     def list(self):
-        for finder in get_finders():
+        for finder in finders.get_finders():
             for result in finder.list(None):
                 yield result
+
+    def resolve_exact(self, path):
+        result = finders.find(path)
+        if result and os.path.isfile(result):
+            return path, FileSystemStorage(location=result[:-len(path)])
 
 
 class ConfiguredFinder(LazyObject):
     def _setup(self):
-        self._wrapped = get_finder(settings.FINDER)
+        self._wrapped = finders.get_finder(settings.FINDER)
 
 default_finder = ConfiguredFinder()
 

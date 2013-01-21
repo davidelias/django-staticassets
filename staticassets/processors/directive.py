@@ -1,3 +1,4 @@
+import os
 import re
 import shlex
 
@@ -22,7 +23,7 @@ class DirectiveProcessor(BaseProcessor):
     def process(self, asset):
         directives, content = self.parse(asset.content)
         self.process_directives(asset, directives)
-        asset.content = content.lstrip()  # self.process_content(content)
+        asset.content = content.lstrip()
 
     def parse(self, content):
         match = self.header_re.match(content)
@@ -46,17 +47,15 @@ class DirectiveProcessor(BaseProcessor):
             if hasattr(self, method):
                 getattr(self, method)(asset, *args)
 
-    def process_content(self, content):
-        content = [content]
-        for path in self.included_paths:
-            asset = finder.find(path)
-            content.append(asset.content)
-        return '\n'.join(content)
+    def resolve(self, asset, path):
+        if not path.startswith('./'):
+            return path
+        return os.path.normpath(os.path.join(os.path.dirname(asset.name), path))
 
     # Directives ================================
 
     def process_require(self, asset, path):
-        asset.require_asset(path)
+        asset.require_asset(self.resolve(asset, path))
 
     def process_require_tree(self, asset, path):
         pass
