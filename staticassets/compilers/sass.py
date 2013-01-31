@@ -3,13 +3,14 @@ from .base import CommandCompiler
 
 class SassCompiler(CommandCompiler):
     content_type = 'text/css'
-    options = {'compass': True}
+    options = {'compass': True, 'scss': False}
     command = 'sass'
     params = ['--trace']
 
-    def compile(self, asset):
+    def get_args(self):
+        args = super(SassCompiler, self).get_args()
         if self.compass:
-            self.params.append('--compass')
-        if '.scss' in asset.attributes.extensions:
-            self.params.append('--scss')
-        return super(SassCompiler, self).compile(asset)
+            args.append('--compass')
+        if self.scss:
+            args.append('--scss')
+        return args
