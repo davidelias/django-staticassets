@@ -1,45 +1,44 @@
-from django.utils.functional import memoize, lazy
+from django.utils.functional import memoize
 
-from .. import settings
-from ..utils import get_handler
+from staticassets import settings
+from staticassets.filters import BaseFilter, CommandMixin, get_filter
 
 
-_processors = {}
 _preprocessors = {}
 _postprocessors = {}
+_bundleprocessors = {}
 
-get_processor = memoize(get_handler, _processors, 1)
+
+class BaseProcessor(BaseFilter):
+    method = 'process'
 
 
-class BaseProcessor(object):
-    def __call__(self, *args):
-        self.process(*args)
-
+class CommandProcessor(BaseFilter, CommandMixin):
     def process(self, asset):
-        raise NotImplementedError()
+        asset.content = self.run(asset.content)
 
 
-# @lazy(list)
-def get_pre(content_type):
-    if not _preprocessors:
-        prepare_processors(_preprocessors, settings.PREPROCESSORS)
-    return _preprocessors.get(content_type, [])
+def pre(content_type):
+    return get_preprocessors(content_type, settings.PREPROCESSORS)
 
 
-# @lazy(list)
-def get_post(content_type):
-    if not _postprocessors:
-        prepare_processors(_postprocessors, settings.POSTPROCESSORS)
-    return _postprocessors.get(content_type, [])
+def post(content_type):
+    return get_postprocessors(content_type, settings.POSTPROCESSORS)
 
 
-def prepare_processors(cache, processors):
-    for processor in processors:
+def bundle(content_type):
+    return get_bundleprocessors(content_type, settings.BUNDLEPROCESSORS)
+
+
+def _get_processors(content_type, processors_conf):
+    processors = []
+    for processor in processors_conf:
         processor = list(processor)
-        content_type = processor.pop(0)
-        if not content_type in cache:
-            cache[content_type] = []
-        cache[content_type].append(get_processor(*processor))
+        if content_type != processor.pop(0):
+            continue
 
-# prepare_processors(_preprocessors, settings.PREPROCESSORS)
-# prepare_processors(_postprocessors, settings.POSTPROCESSORS)
+        processors.append(get_filter(processor))
+    return processors
+get_preprocessors = memoize(_get_processors, _preprocessors, 1)
+get_postprocessors = memoize(_get_processors, _postprocessors, 1)
+get_bundleprocessors = memoize(_get_processors, _bundleprocessors, 1)
