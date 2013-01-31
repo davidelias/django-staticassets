@@ -2,6 +2,8 @@ import os
 import re
 import shlex
 
+from django.contrib.staticfiles.utils import get_files
+
 from .base import BaseProcessor
 
 
@@ -48,14 +50,27 @@ class DirectiveProcessor(BaseProcessor):
                 getattr(self, method)(asset, *args)
 
     def resolve(self, asset, path):
-        if not path.startswith('./'):
+        if not path.startswith('.'):
             return path
-        return os.path.normpath(os.path.join(os.path.dirname(asset.name), path))
+        return os.path.normpath(os.path.join(asset.attributes.dirname, path))
 
     # Directives ================================
 
     def process_require(self, asset, path):
         asset.require_asset(self.resolve(asset, path))
 
+    def process_require_directory(self, asset, path):
+        path = self.resolve(asset, path)
+        asset.depend_on(asset.storage.path(path))
+        directories, files = asset.storage.listdir(path)
+        for filename in files:
+            asset.require_asset(os.path.join(path, filename))
+
+    def process_require_dir(self, asset, path):
+        self.process_require_directory(asset, path)
+
     def process_require_tree(self, asset, path):
-        pass
+        path = self.resolve(asset, path)
+        asset.depend_on(asset.storage.path(path))
+        for filename in get_files(asset.storage, location=path):
+            asset.require_asset(filename)
