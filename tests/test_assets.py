@@ -1,12 +1,13 @@
 import os
 
 from staticassets import AssetAttributes
+from staticassets.assets import CircularDependencyError
 from staticassets.finder import StaticFilesFinder
 
 from .test import TestCase
 
 
-class FindAssetTest(TestCase):
+class AssetTest(TestCase):
     def setUp(self):
         self.finder = StaticFilesFinder()
 
@@ -68,3 +69,11 @@ class FindAssetTest(TestCase):
             self.finder.find('models/index.js').path,
             self.finder.find('app.js').path,
         ], [a.path for a in asset])
+
+    def test_circular_require_raises_exception(self):
+        self.assertRaises(CircularDependencyError, self.finder.find, 'circular/a.js')
+        self.assertRaises(CircularDependencyError, self.finder.find, 'circular/b.js')
+        self.assertRaises(CircularDependencyError, self.finder.find, 'circular/c.js')
+
+    def test_require_directory(self):
+        self.assertEqual('var A = {};\nvar B = {};\n', self.finder.find('base.js', bundle=True).content)

@@ -18,14 +18,14 @@ class BaseAssetFinder(finders.BaseFinder):
     def __getitem__(self, path):
         return self.find(path, bundle=True)
 
-    def find(self, path, bundle=False):
+    def find(self, path, bundle=False, **kwargs):
         asset = self.assets.get(path)
         if not asset or asset.expired:
             try:
                 name, storage = self.resolve(path)
             except AssetNotFound:
                 return None
-            asset = Asset.create(name, storage, self, bundle=bundle)
+            asset = Asset.create(name, storage, self, bundle=bundle, **kwargs)
             self.assets[path] = asset
         return asset
 

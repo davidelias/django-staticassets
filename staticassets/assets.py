@@ -11,6 +11,10 @@ class AssetNotFound(Exception):
     pass
 
 
+class CircularDependencyError(Exception):
+    pass
+
+
 class AssetAttributes(object):
     def __init__(self, path):
         self.path = path
@@ -81,17 +85,24 @@ class AssetAttributes(object):
 
     @property
     def processors(self):
-        return self.preprocessors + list(self.compilers) + self.postprocessors
+        return self.preprocessors + list(reversed(list(self.compilers))) + self.postprocessors
 
 
 class Asset(object):
 
-    def __init__(self, name, storage, finder, content_type=None):
+    def __init__(self, name, storage, finder, content_type=None, calls=set()):
         self.name = name
         self.storage = StaticFilesStorage(location=storage.location)
         self.finder = finder
         self.content_type = content_type
         self.attributes = AssetAttributes(name)
+
+        # prevent require the same dependency per asset
+        # copied from http://github.com/gears/gears
+        self.calls = calls.copy()
+        if self.path in self.calls:
+            raise CircularDependencyError("'%s' has already been required" % self.path)
+        self.calls.add(self.path)
 
     def __repr__(self):
         return '<%s path=%s>' % (self.__class__.__name__, self.path)
@@ -101,6 +112,12 @@ class Asset(object):
             for asset in requirement:
                 yield asset
         yield self
+
+    def _reset(self):
+        self._required_paths = []
+        self.dependencies = []
+        self.requirements = []
+        self.depend_on_asset(self)
 
     @staticmethod
     def create(*args, **kwargs):
@@ -146,15 +163,13 @@ class Asset(object):
                 return True
             if stat.st_mtime > mtime:
                 return True
-            # if digest != utils.get_file_digest(path):
-            #     return True
+            if digest != utils.get_path_digest(path):
+                return True
 
         return False
 
     def process(self, processors=None):
-        self.dependencies = []
-        self.requirements = []
-        self.depend_on_asset(self)
+        self._reset()
 
         for processor in processors or self.attributes.processors:
             processor(self)
@@ -165,14 +180,12 @@ class Asset(object):
         if isinstance(path, (list, tuple)):
             path, mtime, digest = path
         else:
-            mtime, digest = os.path.getmtime(path), utils.get_digest(utils.read_file(path))
+            mtime, digest = os.path.getmtime(path), utils.get_path_digest(path)
         self.dependencies.append([path, mtime, digest])
 
     def depend_on_asset(self, asset):
         if not isinstance(asset, Asset):
             asset = self.finder.find(asset, bundle=False)
-
-        # print "\ndepend_on_asset:", asset.name
 
         if asset.path == self.path:
             self.depend_on([self.path, self.mtime, self.digest])
@@ -181,10 +194,12 @@ class Asset(object):
 
     def require_asset(self, asset):
         if not isinstance(asset, Asset):
-            asset = self.finder.find(asset, bundle=False)
-        print 'require_asset ==', asset
-        self.requirements.append(asset)
-        self.depend_on_asset(asset)
+            asset = self.finder.find(asset, bundle=False, calls=self.calls)
+
+        if not asset.path in self._required_paths:
+            self._required_paths.append(asset.path)
+            self.requirements.append(asset)
+            self.depend_on_asset(asset)
 
     # Cache/Pickling ============================
 
@@ -206,10 +221,6 @@ class AssetProcessed(Asset):
         super(AssetProcessed, self).__init__(*args, **kwargs)
 
         self.mtime = os.path.getmtime(self.path)
-        self.dependencies = []
-        self.requirements = []
-        self.depend_on_asset(self)
-
         self.process()
 
 
@@ -219,11 +230,9 @@ class AssetBundle(Asset):
 
         self.asset = self.finder.find(self.name, bundle=False)
         self.dependencies = self.asset.dependencies
-        self.requirements = self.asset.requirements
-        self.content = ''.join([asset.content for asset in self.asset])
+        self.requirements = list(self.asset)
+        self.content = ''.join([asset.content for asset in self.requirements])
         self.mtime = max([d[1] for d in self.dependencies])
-
-        self.process(processors=self.attributes.bundle_processors)
 
     def __iter__(self):
         return iter(self.asset)
