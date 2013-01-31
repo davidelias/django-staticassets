@@ -1,3 +1,4 @@
+import os
 import codecs
 import hashlib
 
@@ -12,6 +13,13 @@ def read_file(path):
 
 def get_digest(source):
     return hashlib.md5(source.encode('utf-8')).hexdigest()
+
+
+def get_path_digest(path):
+    if os.path.isfile(path):
+        return get_digest(read_file(path))
+    elif os.path.isdir(path):
+        return get_digest(','.join(os.listdir(path)))
 
 
 def get_handler(import_path):
