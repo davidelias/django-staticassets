@@ -19,14 +19,33 @@ class AssetAttributes(object):
     def __init__(self, path):
         self.path = path
 
+    @staticmethod
+    def available_extensions():
+        for extension in settings.MIMETYPES.keys():
+            yield extension
+        for extension in settings.COMPILERS.keys():
+            yield extension
+
+    @staticmethod
+    def get_path_search_regex(path):
+        available_extensions = list(AssetAttributes.available_extensions())
+        basename = os.path.basename(path)
+        for ext in re.findall(r'\.[^.]+', basename):
+            if ext in available_extensions:
+                basename = basename.replace(ext, '')
+        extension_pattern = '|'.join([r'\{0}'.format(ext) for ext in available_extensions])
+        path = os.path.join(os.path.dirname(path), basename)
+        return re.compile(r'^{0}({1})*$'.format(path, extension_pattern))
+
     @property
     def search_paths(self):
-        paths = [self.path]
+        paths = [(self.path, AssetAttributes.get_path_search_regex(self.path))]
+
+        paths.append(('{0}/component.json'.format(self.path_without_extensions), None))
 
         if os.path.basename(self.path_without_extensions) != 'index':
-            paths.append('{0}/index{1}'.format(self.path_without_extensions, ''.join(self.extensions)))
-
-        paths.append('{0}/component.json'.format(self.path_without_extensions))
+            path = '{0}/index{1}'.format(self.path_without_extensions, ''.join(self.extensions))
+            paths.append((path, AssetAttributes.get_path_search_regex(path)))
 
         return paths
 
@@ -38,6 +57,16 @@ class AssetAttributes(object):
     def path_without_extensions(self):
         index = len(''.join(self.extensions))
         return self.path[:-index] if index > 0 else self.path
+
+    @cached_property
+    def url(self):
+        try:
+            path = self.path[:self.path.index(self.format_extension)]
+            return path + self.format_extension
+        except ValueError:
+            available_extensions = list(AssetAttributes.available_extensions())
+            extensions = [e for e in self.extensions if not e in available_extensions]
+            return self.path_without_extensions + ''.join(extensions) + self.format_extension
 
     @cached_property
     def extensions(self):
@@ -57,6 +86,7 @@ class AssetAttributes(object):
         for ext in self.extensions:
             if settings.MIMETYPES.get(ext):
                 return settings.MIMETYPES.get(ext)
+        return self.compiler_content_type
 
     @cached_property
     def compiler_content_type(self):
@@ -150,9 +180,7 @@ class Asset(object):
 
     @property
     def url(self):
-        extension = self.attributes.format_extension
-        path = self.attributes.path_without_extensions
-        return self.storage.url(path + extension)
+        return self.storage.url(self.attributes.url)
 
     @property
     def expired(self):

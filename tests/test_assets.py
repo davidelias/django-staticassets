@@ -11,10 +11,38 @@ class AssetTest(TestCase):
     def setUp(self):
         self.finder = StaticFilesFinder()
 
+    def get_search_regex(self, path):
+        return AssetAttributes.get_path_search_regex(path)
+
+    def test_attributes_available_extensions(self):
+        self.assertItemsEqual([
+            '.js', '.css',
+            '.ejs', '.jst', '.coffee',
+            '.sass', '.scss', '.styl', '.less'
+        ], AssetAttributes.available_extensions())
+
+    def test_attributes_get_path_search_regex(self):
+        self.assertEqual('^app(%s)*$' % '|'.join([
+            '\%s' % e for e in AssetAttributes.available_extensions()
+        ]), self.get_search_regex('app.js').pattern)
+
     def test_attributes_search_paths(self):
-        self.assertEqual(['index.js', 'index/component.json'], AssetAttributes('index.js').search_paths)
-        self.assertEqual(['foo.js', 'foo/index.js', 'foo/component.json'], AssetAttributes('foo.js').search_paths)
-        self.assertEqual(['bar', 'bar/index', 'bar/component.json'], AssetAttributes('bar').search_paths)
+        self.assertEqual([
+            ('index.js', self.get_search_regex('index.js')),
+            ('index/component.json', None)
+        ], AssetAttributes('index.js').search_paths)
+
+        self.assertEqual([
+            ('foo.min.js', self.get_search_regex('foo.min.js')),
+            ('foo/component.json', None),
+            ('foo/index.min.js', self.get_search_regex('foo/index.min.js'))
+        ], AssetAttributes('foo.min.js').search_paths)
+
+        self.assertEqual([
+            ('bar', self.get_search_regex('bar')),
+            ('bar/component.json', None),
+            ('bar/index', self.get_search_regex('bar/index'))
+        ], AssetAttributes('bar').search_paths)
 
     def test_attributes_extensions(self):
         self.assertEqual(['.js', '.coffee'], AssetAttributes('foo.js.coffee').extensions)
@@ -41,8 +69,10 @@ class AssetTest(TestCase):
 
     def test_asset_url(self):
         self.assertEqual('/static/style.css', self.finder.find('style').url)
+        self.assertEqual('/static/style.min.css', self.finder.find('style.min.sass').url)
         self.assertEqual('/static/foo.js', self.finder.find('foo.coffee').url)
         self.assertEqual('/static/foo.js', self.finder.find('foo.js').url)
+        self.assertEqual('/static/plugin.jquery.js', self.finder.find('plugin.jquery.js').url)
 
     def test_dependencies(self):
         asset = self.finder.find('app.js')

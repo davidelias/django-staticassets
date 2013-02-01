@@ -4,6 +4,7 @@ import json
 
 from django.core.files.storage import FileSystemStorage
 from django.contrib.staticfiles import finders
+from django.utils.datastructures import SortedDict
 from django.utils.functional import LazyObject
 
 from .assets import Asset, AssetAttributes, AssetNotFound
@@ -21,12 +22,8 @@ class BaseAssetFinder(finders.BaseFinder):
     def find(self, path, bundle=False, **kwargs):
         asset = self.assets.get(path)
         if not asset or asset.expired:
-            try:
-                name, storage = self.resolve(path)
-            except AssetNotFound:
-                return None
-            asset = Asset.create(name, storage, self, bundle=bundle, **kwargs)
-            self.assets[path] = asset
+            name, storage = self.resolve(path)
+            asset = self.assets[path] = Asset.create(name, storage, self, bundle=bundle, **kwargs)
         return asset
 
     def resolve(self, path):
@@ -35,11 +32,10 @@ class BaseAssetFinder(finders.BaseFinder):
             return exact
 
         attrs = AssetAttributes(path)
-        for path in attrs.search_paths:
-            regex = self.get_search_regex(path)
+        for path, regex in attrs.search_paths:
             for name, storage in self.list():
-                if not regex.search(name):
-                    continue
+                if regex and regex.search(name):
+                    return name, storage
                 if os.path.basename(name) == 'component.json':
                     comp = json.load(storage.open(name))
                     main = comp['main'] if isinstance(comp['main'], list) else [comp['main']]
@@ -48,26 +44,9 @@ class BaseAssetFinder(finders.BaseFinder):
                         _, comp_ext = os.path.splitext(comp_name)
                         if ext == '' or ext == comp_ext:
                             return os.path.join(os.path.dirname(name), comp_name), storage
-                else:
-                    return name, storage
-        raise AssetNotFound('File "{0}" not found. Tried "{1}"'.format(attrs.path, '", "'.join(attrs.search_paths)))
 
-    @property
-    def extensions(self):
-        for extension in settings.MIMETYPES.keys():
-            yield extension
-        for extension in settings.COMPILERS.keys():
-            yield extension
-
-    def get_search_regex(self, path):
-        available_extensions = list(self.extensions)
-        basename = os.path.basename(path)
-        for ext in re.findall(r'\.[^.]+', basename):
-            if ext in available_extensions:
-                basename = basename.replace(ext, '')
-        extension_pattern = '|'.join([r'\{0}'.format(ext) for ext in available_extensions])
-        path = os.path.join(os.path.dirname(path), basename)
-        return re.compile(r'{0}({1})*$'.format(path, extension_pattern))
+        searched_paths = SortedDict(attrs.search_paths).keys()
+        raise AssetNotFound('File "{0}" not found. Tried "{1}"'.format(attrs.path, '", "'.join(searched_paths)))
 
     def list(self):
         raise NotImplementedError()
