@@ -19,8 +19,8 @@ initial version
 Requirements
 ============
 
-*Python 2.6+
-*Django 1.4+
+* Python 2.6+
+* Django 1.4+
 
 
 Instructions
