@@ -250,6 +250,7 @@ class AssetProcessed(Asset):
 
         self.mtime = os.path.getmtime(self.path)
         self.process()
+        self.mtime = max([d[1] for d in self.dependencies])
 
 
 class AssetBundle(Asset):
