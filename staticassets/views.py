@@ -20,9 +20,9 @@ def serve(request, path, **kwargs):
     # Respect the If-Modified-Since header.
     modified_since = request.META.get('HTTP_IF_MODIFIED_SINCE')
     if not was_modified_since(modified_since, asset.mtime, asset.size):
-        return HttpResponseNotModified(mimetype=asset.attributes.content_type)
+        return HttpResponseNotModified(content_type=asset.attributes.content_type)
 
-    response = HttpResponse(asset.content, mimetype=asset.attributes.content_type)
+    response = HttpResponse(asset.content, content_type=asset.attributes.content_type)
     response['Last-Modified'] = http_date(asset.mtime)
     response['Content-Length'] = asset.size
 
