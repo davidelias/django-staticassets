@@ -74,3 +74,7 @@ class DirectiveProcessor(BaseProcessor):
         asset.depend_on(asset.storage.path(path))
         for filename in get_files(asset.storage, location=path):
             asset.require_asset(filename)
+
+    def process_depend_on(self, asset, path):
+        name, storage = asset.finder.resolve(self.resolve(asset, path))
+        asset.depend_on(storage.path(name))
