@@ -1,121 +1,13 @@
 import os
-import re
+import sys
+from time import time
 
 from django.contrib.staticfiles.storage import StaticFilesStorage
 from django.utils.functional import cached_property
 
-from . import utils, processors, compilers, settings
-
-
-class AssetNotFound(Exception):
-    pass
-
-
-class CircularDependencyError(Exception):
-    pass
-
-
-class AssetAttributes(object):
-    def __init__(self, path):
-        self.path = path
-
-    @staticmethod
-    def available_extensions():
-        for extension in settings.MIMETYPES.keys():
-            yield extension
-        for extension in settings.COMPILERS.keys():
-            yield extension
-
-    @staticmethod
-    def get_path_search_regex(path):
-        available_extensions = list(AssetAttributes.available_extensions())
-        basename = os.path.basename(path)
-        for ext in re.findall(r'\.[^.]+', basename):
-            if ext in available_extensions:
-                basename = basename.replace(ext, '')
-        extension_pattern = '|'.join([r'\{0}'.format(ext) for ext in available_extensions])
-        path = os.path.join(os.path.dirname(path), basename)
-        return re.compile(r'^{0}({1})*$'.format(path, extension_pattern))
-
-    @property
-    def search_paths(self):
-        paths = [(self.path, AssetAttributes.get_path_search_regex(self.path))]
-
-        paths.append(('{0}/component.json'.format(self.path_without_extensions), None))
-
-        if os.path.basename(self.path_without_extensions) != 'index':
-            path = '{0}/index{1}'.format(self.path_without_extensions, ''.join(self.extensions))
-            paths.append((path, AssetAttributes.get_path_search_regex(path)))
-
-        return paths
-
-    @property
-    def dirname(self):
-        return os.path.dirname(self.path)
-
-    @cached_property
-    def path_without_extensions(self):
-        index = len(''.join(self.extensions))
-        return self.path[:-index] if index > 0 else self.path
-
-    @cached_property
-    def url(self):
-        try:
-            path = self.path[:self.path.index(self.format_extension)]
-            return path + self.format_extension
-        except ValueError:
-            available_extensions = list(AssetAttributes.available_extensions())
-            extensions = [e for e in self.extensions if not e in available_extensions]
-            return self.path_without_extensions + ''.join(extensions) + self.format_extension
-
-    @cached_property
-    def extensions(self):
-        return re.findall(r'\.[^.]+', os.path.basename(self.path))
-
-    @cached_property
-    def format_extension(self):
-        for ext in reversed(self.extensions):
-            if ext in settings.MIMETYPES and not compilers.get(ext):
-                return ext
-        for ext, mimetype in settings.MIMETYPES.items():
-            if mimetype == self.compiler_content_type:
-                return ext
-
-    @cached_property
-    def content_type(self):
-        for ext in self.extensions:
-            if settings.MIMETYPES.get(ext):
-                return settings.MIMETYPES.get(ext)
-        return self.compiler_content_type
-
-    @cached_property
-    def compiler_content_type(self):
-        for compiler in self.compilers:
-            if compiler.content_type:
-                return compiler.content_type
-
-    @property
-    def compilers(self):
-        for ext in self.extensions:
-            compiler = compilers.get(ext)
-            if compiler:
-                yield compiler
-
-    @property
-    def preprocessors(self):
-        return processors.pre(self.content_type)
-
-    @property
-    def postprocessors(self):
-        return processors.post(self.content_type)
-
-    @property
-    def bundle_processors(self):
-        return processors.bundle(self.content_type)
-
-    @property
-    def processors(self):
-        return self.preprocessors + list(reversed(list(self.compilers))) + self.postprocessors
+from .. import utils
+from ..exceptions import CircularDependencyError
+from .attributes import AssetAttributes
 
 
 class Asset(object):
@@ -124,8 +16,8 @@ class Asset(object):
         self.name = name
         self.storage = StaticFilesStorage(location=storage.location)
         self.finder = finder
-        self.content_type = content_type
-        self.attributes = AssetAttributes(name)
+        # self.content_type = content_type
+        self.attributes = AssetAttributes(name, content_type)
 
         # prevent require the same dependency per asset
         # copied from http://github.com/gears/gears
@@ -178,9 +70,9 @@ class Asset(object):
     def path(self):
         return self.storage.path(self.name)
 
-    @property
+    @cached_property
     def url(self):
-        return self.storage.url(self.attributes.url)
+        return self.storage.url(self.attributes.path_without_extensions + self.attributes.suffix)
 
     @property
     def expired(self):
@@ -199,8 +91,12 @@ class Asset(object):
     def process(self, processors=None):
         self._reset()
 
+        start = time()
         for processor in processors or self.attributes.processors:
             processor(self)
+        stop = time()
+        duration = stop - start
+        sys.stdout.write('Processed %s in %.3f\n' % (self.name, duration))
 
     # Dependencies ==============================
 
