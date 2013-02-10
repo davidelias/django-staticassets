@@ -1,2 +1,2 @@
 from .assets import Asset, AssetAttributes
-from .finder import find
+from .finder import default_finder as finder

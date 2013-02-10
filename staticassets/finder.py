@@ -1,15 +1,22 @@
 import os
 import re
 
+from django.core.cache import get_cache
 from django.core.files.storage import FileSystemStorage
 from django.contrib.staticfiles import finders
 from django.utils.datastructures import SortedDict
 from django.utils.functional import SimpleLazyObject, memoize
 
-from .assets import Asset, AssetAttributes
+from staticassets import Asset, AssetAttributes
 from .exceptions import AssetNotFound
 from .utils import expand_component_json, get_class
 from . import settings
+
+
+cache = SimpleLazyObject(lambda: get_cache('django.core.cache.backends.filebased.FileBasedCache', **{
+    'LOCATION': os.path.join(settings.CACHE_DIR),
+    'TIMEOUT': 60 * 60 * 24 * 30
+}))
 
 
 class BaseAssetFinder(object):
@@ -31,12 +38,15 @@ class AssetFinder(BaseAssetFinder):
         self.assets = {}
         self.search_regex = {}
 
-    def find(self, path, bundle=False, **options):
-        asset = self.assets.get(path)
+    def find(self, path, **options):
+        options.setdefault('bundle', False)
+        name, storage = self.resolve(path, **options)
+        key = self.get_cache_key(storage.path(name), options)
+
+        asset = self.assets.get(key, cache.get(key))
         if not asset or asset.expired:
-            name, storage = self.resolve(path, **options)
-            asset = Asset.create(name, storage, self, bundle=bundle, **options)
-            self.assets[path] = asset
+            asset = self.assets[key] = Asset.create(name, storage, **options)
+            cache.set(key, asset)
         return asset
 
     def resolve(self, path, **options):
@@ -75,6 +85,9 @@ class AssetFinder(BaseAssetFinder):
             pattern = '|'.join([r'\%s' % ext for ext in extensions])
             self.search_regex[path] = re.compile(r'^%s(%s)*$' % (path, pattern))
         return self.search_regex[path]
+
+    def get_cache_key(self, path, options):
+        return '%s:bundle:%s' % (path, 1 if options.get('bundle') else 0)
 
 StaticFilesFinder = AssetFinder
 

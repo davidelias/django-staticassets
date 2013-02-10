@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 
 
@@ -10,6 +12,10 @@ MIMETYPES = {
 MIMETYPES.update(**getattr(settings, 'MIMETYPES', {}))
 
 DIRS = getattr(settings, 'STATICASSETS_DIRS', getattr(settings, 'STATICFILES_DIRS'))
+
+CACHE_DIR = os.path.join(getattr(settings, 'STATIC_ROOT', '/tmp'), 'staticassets-cache')
+
+print CACHE_DIR
 
 FINDER = getattr(settings, 'STATICASSETS_FINDER', 'staticassets.finder.AssetFinder')
 

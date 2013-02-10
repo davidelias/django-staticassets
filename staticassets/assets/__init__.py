@@ -5,6 +5,8 @@ from time import time
 from django.contrib.staticfiles.storage import StaticFilesStorage
 from django.utils.functional import cached_property
 
+import staticassets
+
 from .. import utils
 from ..exceptions import CircularDependencyError
 from .attributes import AssetAttributes
@@ -12,12 +14,11 @@ from .attributes import AssetAttributes
 
 class Asset(object):
 
-    def __init__(self, name, storage, finder, content_type=None, calls=set()):
+    def __init__(self, name, storage, content_type=None, calls=set()):
         self.name = name
         self.storage = StaticFilesStorage(location=storage.location)
-        self.finder = finder
-        # self.content_type = content_type
         self.attributes = AssetAttributes(name, content_type)
+        self.finder = staticassets.finder
 
         # prevent require the same dependency per asset
         # copied from http://github.com/gears/gears
@@ -72,7 +73,10 @@ class Asset(object):
 
     @cached_property
     def url(self):
-        return self.storage.url(self.attributes.path_without_extensions + self.attributes.suffix)
+        return self.storage.url(
+            self.attributes.path_without_extensions +
+            self.attributes.suffix +
+            self.attributes.format_extension)
 
     @property
     def expired(self):
@@ -129,15 +133,29 @@ class Asset(object):
 
     def __getstate__(self):
         return {
+            'name': self.name,
+            'mtime': self.mtime,
             'content': self.content,
             'dependencies': self.dependencies,
-            'requirements': self.requirements
+            'requirements': self.requirements,
+            '_required_paths': getattr(self, '_required_paths', []),
+            'calls': self.calls,
+            'content_type': self.attributes.content_type,
+            'location': self.storage.location
         }
 
     def __setstate__(self, state):
+        self.name = state['name']
+        self.mtime = state['mtime']
         self.content = state['content']
         self.dependencies = state['dependencies']
         self.requirements = state['requirements']
+        self._required_paths = state['_required_paths']
+        self.calls = state['calls']
+
+        self.attributes = AssetAttributes(self.name, state['content_type'])
+        self.storage = StaticFilesStorage(location=state['location'])
+        self.finder = staticassets.finder
 
 
 class AssetProcessed(Asset):
@@ -165,3 +183,12 @@ class AssetBundle(Asset):
     @property
     def expired(self):
         return self.asset.expired
+
+    def __getstate__(self):
+        state = super(AssetBundle, self).__getstate__()
+        state['asset'] = self.asset
+        return state
+
+    def __setstate__(self, state):
+        super(AssetBundle, self).__setstate__(state)
+        self.asset = state['asset']
