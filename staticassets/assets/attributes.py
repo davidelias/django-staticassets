@@ -11,34 +11,12 @@ class AssetAttributes(object):
         self.path = path
         self._content_type = content_type
 
-    @staticmethod
-    def available_extensions():
-        for extension in settings.MIMETYPES.keys():
-            yield extension
-        for extension in settings.COMPILERS.keys():
-            yield extension
-
-    @staticmethod
-    def get_path_search_regex(path):
-        available_extensions = list(AssetAttributes.available_extensions())
-        basename = os.path.basename(path)
-        for ext in re.findall(r'\.[^.]+', basename):
-            if ext in available_extensions:
-                basename = basename.replace(ext, '')
-        extension_pattern = '|'.join([r'\{0}'.format(ext) for ext in available_extensions])
-        path = os.path.join(os.path.dirname(path), basename)
-        return re.compile(r'^{0}({1})*$'.format(path, extension_pattern))
-
     @property
     def search_paths(self):
-        paths = [(self.path, AssetAttributes.get_path_search_regex(self.path))]
-
-        paths.append(('{0}/component.json'.format(self.path_without_extensions), None))
-
+        paths = [self.path]
+        paths.append('%s/component.json' % self.path_without_extensions)
         if os.path.basename(self.path_without_extensions) != 'index':
-            path = '{0}/index{1}'.format(self.path_without_extensions, ''.join(self.extensions))
-            paths.append((path, AssetAttributes.get_path_search_regex(path)))
-
+            paths.append('%s/index%s' % (self.path_without_extensions, ''.join(self.extensions)))
         return paths
 
     @property
@@ -52,9 +30,8 @@ class AssetAttributes(object):
 
     @cached_property
     def suffix(self):
-        available_extensions = list(AssetAttributes.available_extensions())
-        extensions = [e for e in self.extensions if not e in available_extensions]
-        return ''.join(extensions + [self.format_extension])
+        return ''.join([e for e in self.extensions
+            if not e in settings.AVAILABLE_EXTENSIONS])
 
     @cached_property
     def extensions(self):

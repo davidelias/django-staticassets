@@ -1,10 +1,9 @@
 from subprocess import Popen, PIPE
 
-from django.core.exceptions import ImproperlyConfigured
 from django.utils.datastructures import SortedDict
-from django.utils.importlib import import_module
 from django.utils.functional import memoize
 
+from .utils import get_class
 
 _filters = SortedDict()
 
@@ -55,22 +54,7 @@ def get_filter(filter_conf):
 
 
 def _get_filter(import_path, key, args, kwargs):
-    """
-    staticassets.compiler.SomeCompiler|1,2,4:5
-    """
-    # import_path, key = import_path_key.split('|')
-    module, attr = import_path.rsplit('.', 1)
-    try:
-        mod = import_module(module)
-    except ImportError as e:
-        raise ImproperlyConfigured('Error importing module %s: "%s"' % (module, e))
-    try:
-        Filter = getattr(mod, attr)
-    except AttributeError:
-        raise ImproperlyConfigured('Module "%s" does not define a "%s" class.' % (module, attr))
-    if not issubclass(Filter, BaseFilter):
-        raise ImproperlyConfigured('Filter "%s" is not a subclass of "%s"' % (Filter, BaseFilter))
-    return Filter(*args, **kwargs)
+    return get_class(import_path, BaseFilter)(*args, **kwargs)
 get_cached_filter = memoize(_get_filter, _filters, 2)
 
 

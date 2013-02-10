@@ -12,36 +12,24 @@ class AssetTest(TestCase):
         self.finder = StaticFilesFinder()
 
     def get_search_regex(self, path):
-        return AssetAttributes.get_path_search_regex(path)
-
-    def test_attributes_available_extensions(self):
-        self.assertItemsEqual([
-            '.js', '.css',
-            '.ejs', '.jst', '.coffee',
-            '.sass', '.scss', '.styl', '.less'
-        ], AssetAttributes.available_extensions())
-
-    def test_attributes_get_path_search_regex(self):
-        self.assertEqual('^app(%s)*$' % '|'.join([
-            '\%s' % e for e in AssetAttributes.available_extensions()
-        ]), self.get_search_regex('app.js').pattern)
+        return self.finder.get_search_regex(AssetAttributes(path))
 
     def test_attributes_search_paths(self):
         self.assertEqual([
-            ('index.js', self.get_search_regex('index.js')),
-            ('index/component.json', None)
+            'index.js',
+            'index/component.json'
         ], AssetAttributes('index.js').search_paths)
 
         self.assertEqual([
-            ('foo.min.js', self.get_search_regex('foo.min.js')),
-            ('foo/component.json', None),
-            ('foo/index.min.js', self.get_search_regex('foo/index.min.js'))
+            'foo.min.js',
+            'foo/component.json',
+            'foo/index.min.js'
         ], AssetAttributes('foo.min.js').search_paths)
 
         self.assertEqual([
-            ('bar', self.get_search_regex('bar')),
-            ('bar/component.json', None),
-            ('bar/index', self.get_search_regex('bar/index'))
+            'bar',
+            'bar/component.json',
+            'bar/index'
         ], AssetAttributes('bar').search_paths)
 
     def test_attributes_extensions(self):

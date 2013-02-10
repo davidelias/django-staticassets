@@ -11,7 +11,7 @@ MIMETYPES.update(**getattr(settings, 'MIMETYPES', {}))
 
 DIRS = getattr(settings, 'STATICASSETS_DIRS', getattr(settings, 'STATICFILES_DIRS'))
 
-FINDER = getattr(settings, 'STATICASSETS_FINDER', 'staticassets.finder.StaticFilesFinder')
+FINDER = getattr(settings, 'STATICASSETS_FINDER', 'staticassets.finder.AssetFinder')
 
 PREPROCESSORS = getattr(settings, 'STATICASSETS_PREPROCESSORS', (
     ('application/javascript', 'staticassets.processors.DirectiveProcessor'),
@@ -30,3 +30,5 @@ COMPILERS = {
     '.coffee': 'staticassets.compilers.CoffeeScriptCompiler'
 }
 COMPILERS.update(**getattr(settings, 'STATICASSETS_COMPILERS', {}))
+
+AVAILABLE_EXTENSIONS = MIMETYPES.keys() + COMPILERS.keys()

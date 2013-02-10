@@ -1,78 +1,94 @@
 import os
 import re
-import json
 
 from django.core.files.storage import FileSystemStorage
 from django.contrib.staticfiles import finders
 from django.utils.datastructures import SortedDict
-from django.utils.functional import LazyObject
+from django.utils.functional import SimpleLazyObject, memoize
 
-from .assets import Asset, AssetAttributes, AssetNotFound
+from .assets import Asset, AssetAttributes
+from .exceptions import AssetNotFound
+from .utils import expand_component_json, get_class
 from . import settings
 
 
-class BaseAssetFinder(finders.BaseFinder):
+class BaseAssetFinder(object):
+    """
+    A base asset finder to be used for custom asset finder classes.
+    """
+    def find(self, path, bundle=False, **options):
+        raise NotImplementedError()
+
+
+class AssetFinder(BaseAssetFinder):
+    """
+    Finder to locate any asset, it will use app `django.contrib.staticfiles`
+    finders and allow search with or without extensions
+    """
 
     def __init__(self):
+        # cache in memory resolved paths
         self.assets = {}
+        self.search_regex = {}
 
-    def __getitem__(self, path):
-        return self.find(path, bundle=True)
-
-    def find(self, path, bundle=False, **kwargs):
+    def find(self, path, bundle=False, **options):
         asset = self.assets.get(path)
         if not asset or asset.expired:
-            name, storage = self.resolve(path)
-            asset = self.assets[path] = Asset.create(name, storage, self, bundle=bundle, **kwargs)
+            name, storage = self.resolve(path, **options)
+            asset = Asset.create(name, storage, self, bundle=bundle, **options)
+            self.assets[path] = asset
         return asset
 
-    def resolve(self, path):
-        exact = self.resolve_exact(path)
-        if exact:
-            return exact
+    def resolve(self, path, **options):
+        """
+
+        """
+        # first try to match the exact filename
+        absolute_path = finders.find(path)
+        if absolute_path and os.path.isfile(absolute_path):
+            return path, FileSystemStorage(location=absolute_path[:-len(path)])
 
         attrs = AssetAttributes(path)
-        for path, regex in attrs.search_paths:
+        for search_path in attrs.search_paths:
+            regex = self.get_search_regex(search_path)
             for name, storage in self.list():
-                if regex and regex.search(name):
+                if search_path.endswith('component.json') and search_path == name:
+                    for name in expand_component_json(storage.path(name)):
+                        return name, storage
+                elif regex.search(name):
                     return name, storage
-                if os.path.basename(name) == 'component.json':
-                    comp = json.load(storage.open(name))
-                    main = comp['main'] if isinstance(comp['main'], list) else [comp['main']]
-                    _, ext = os.path.splitext(name)
-                    for comp_name in main:
-                        _, comp_ext = os.path.splitext(comp_name)
-                        if ext == '' or ext == comp_ext:
-                            return os.path.join(os.path.dirname(name), comp_name), storage
 
-        searched_paths = SortedDict(attrs.search_paths).keys()
-        raise AssetNotFound('File "{0}" not found. Tried "{1}"'.format(attrs.path, '", "'.join(searched_paths)))
+        raise AssetNotFound('File "%s" not found. Tried "%s"' % (
+            attrs.path, '", "'.join(attrs.search_paths)))
 
-    def list(self):
-        raise NotImplementedError()
-
-    def resolve_exact(self):
-        raise NotImplementedError()
-
-
-class StaticFilesFinder(BaseAssetFinder):
     def list(self):
         for finder in finders.get_finders():
             for result in finder.list(None):
                 yield result
 
-    def resolve_exact(self, path):
-        result = finders.find(path)
-        if result and os.path.isfile(result):
-            return path, FileSystemStorage(location=result[:-len(path)])
+    def get_search_regex(self, path):
+        if not path in self.search_regex:
+            attrs = AssetAttributes(path)
+            extensions = settings.AVAILABLE_EXTENSIONS
+            # remove all extensions except non compiler and mimetype extensions
+            path = attrs.path_without_extensions + attrs.suffix
+            pattern = '|'.join([r'\%s' % ext for ext in extensions])
+            self.search_regex[path] = re.compile(r'^%s(%s)*$' % (path, pattern))
+        return self.search_regex[path]
 
-
-class ConfiguredFinder(LazyObject):
-    def _setup(self):
-        self._wrapped = finders.get_finder(settings.FINDER)
-
-default_finder = ConfiguredFinder()
+StaticFilesFinder = AssetFinder
 
 
 def find(*args, **kwargs):
     return default_finder.find(*args, **kwargs)
+
+
+default_finder = SimpleLazyObject(lambda: get_finder(settings.FINDER))
+
+
+_finders = SortedDict()
+
+
+def _get_finder(import_path):
+    return get_class(import_path, BaseAssetFinder)()
+get_finder = memoize(_get_finder, _finders, 1)
