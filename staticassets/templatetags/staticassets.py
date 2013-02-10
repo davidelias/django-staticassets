@@ -8,11 +8,14 @@ register = Library()
 
 class AssetNode(Node):
     def __init__(self, name, debug, nodelist):
-        self.asset = finder.find(name)
+        self.name = name
         self.debug = debug
         self.nodelist = nodelist
+        self.asset = None
 
     def render(self, context):
+        if not self.asset:
+            self.asset = finder.find(self.name)
         if settings.DEBUG or self.debug:
             return '\n'.join([self.render_asset(a, context) for a in self.asset])
         return self.render_asset(self.asset, context)
