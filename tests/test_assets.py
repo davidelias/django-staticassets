@@ -32,6 +32,19 @@ class AssetTest(TestCase):
             'bar/index'
         ], AssetAttributes('bar').search_paths)
 
+    def test_attributes_available_extensions(self):
+        self.assertItemsEqual(
+            ['.coffee', '.ejs', '.js', '.jst'],
+            AssetAttributes('foo.js.coffee').available_extensions)
+
+        self.assertItemsEqual(
+            ['.coffee', '.css', '.ejs', '.js', '.jst', '.less', '.sass', '.scss', '.styl'],
+            AssetAttributes('foo').available_extensions)
+
+        self.assertItemsEqual(
+            ['.css', '.less', '.sass', '.scss', '.styl'],
+            AssetAttributes('foo', 'text/css').available_extensions)
+
     def test_attributes_extensions(self):
         self.assertEqual(['.js', '.coffee'], AssetAttributes('foo.js.coffee').extensions)
 

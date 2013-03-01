@@ -6,6 +6,11 @@ from django.utils.functional import cached_property
 from .. import processors, compilers, settings
 
 
+AVAILABLE_EXTENSIONS = {
+
+}
+
+
 class AssetAttributes(object):
     def __init__(self, path, content_type=None):
         self.path = path
@@ -22,6 +27,18 @@ class AssetAttributes(object):
     @property
     def dirname(self):
         return os.path.dirname(self.path)
+
+    @cached_property
+    def available_extensions(self):
+        if not self.content_type:
+            return settings.AVAILABLE_EXTENSIONS[:]
+
+        if not self.content_type in AVAILABLE_EXTENSIONS:
+            extensions = [e for e, m in settings.MIMETYPES.items() if m == self.content_type]
+            extensions += [e for e, m in compilers.get_mimetypes().items() if m == self.content_type]
+            AVAILABLE_EXTENSIONS[self.content_type] = extensions
+
+        return AVAILABLE_EXTENSIONS[self.content_type][:]
 
     @cached_property
     def path_without_extensions(self):

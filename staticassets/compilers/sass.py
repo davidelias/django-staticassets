@@ -1,11 +1,13 @@
+import re
+
 from .base import CommandCompiler
 
 
 class SassCompiler(CommandCompiler):
     content_type = 'text/css'
-    options = {'compass': True, 'scss': False}
+    options = {'compass': False, 'scss': False}
     command = 'sass'
-    params = ['--trace']
+    params = ['-s', '-g', '--trace']
 
     def get_args(self):
         args = super(SassCompiler, self).get_args()
@@ -13,4 +15,5 @@ class SassCompiler(CommandCompiler):
             args.append('--compass')
         if self.scss:
             args.append('--scss')
+        args += ['-I', self.asset.storage.path(self.asset.attributes.dirname)]
         return args

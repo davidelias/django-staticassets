@@ -12,7 +12,7 @@ def serve(request, path, **kwargs):
     if not mimetype in settings.MIMETYPES.values():
         return staticfiles_serve(request, path, **kwargs)
 
-    bundle = request.GET.get('bundle') in ('1', 't', 'true')
+    bundle = request.GET.get('bundle') in ('1', 't', 'true') or not settings.DEBUG
     asset = finder.find(path, bundle=bundle)
     if not asset:
         raise Http404("Static asset not found")

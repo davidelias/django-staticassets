@@ -1,4 +1,4 @@
-from .base import BaseCompiler, CommandCompiler, get
+from .base import BaseCompiler, CommandCompiler, get, get_mimetypes
 from .coffeescript import CoffeeScriptCompiler
 from .stylus import StylusCompiler
 from .sass import SassCompiler

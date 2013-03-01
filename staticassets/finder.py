@@ -34,7 +34,7 @@ class AssetFinder(BaseAssetFinder):
     """
 
     def __init__(self):
-        # cache in memory resolved paths
+        # cache in memory
         self.assets = {}
         self.search_regex = {}
 
@@ -42,7 +42,6 @@ class AssetFinder(BaseAssetFinder):
         options.setdefault('bundle', False)
         name, storage = self.resolve(path, **options)
         key = self.get_cache_key(storage.path(name), options)
-
         asset = self.assets.get(key, cache.get(key))
         if not asset or asset.expired:
             asset = self.assets[key] = Asset.create(name, storage, **options)
@@ -50,9 +49,6 @@ class AssetFinder(BaseAssetFinder):
         return asset
 
     def resolve(self, path, **options):
-        """
-
-        """
         # first try to match the exact filename
         absolute_path = finders.find(path)
         if absolute_path and os.path.isfile(absolute_path):
@@ -60,7 +56,7 @@ class AssetFinder(BaseAssetFinder):
 
         attrs = AssetAttributes(path)
         for search_path in attrs.search_paths:
-            regex = self.get_search_regex(search_path)
+            regex = self.get_search_regex(search_path, options.get('content_type'))
             for name, storage in self.list():
                 if search_path.endswith('component.json') and search_path == name:
                     for name in expand_component_json(storage.path(name)):
@@ -76,15 +72,14 @@ class AssetFinder(BaseAssetFinder):
             for result in finder.list(None):
                 yield result
 
-    def get_search_regex(self, path):
-        if not path in self.search_regex:
-            attrs = AssetAttributes(path)
-            extensions = settings.AVAILABLE_EXTENSIONS
+    def get_search_regex(self, path, content_type=None):
+        if not (path, content_type) in self.search_regex:
+            attrs = AssetAttributes(path, content_type)
             # remove all extensions except non compiler and mimetype extensions
             path = attrs.path_without_extensions + attrs.suffix
-            pattern = '|'.join([r'\%s' % ext for ext in extensions])
-            self.search_regex[path] = re.compile(r'^%s(%s)*$' % (path, pattern))
-        return self.search_regex[path]
+            pattern = '|'.join([r'\%s' % ext for ext in attrs.available_extensions])
+            self.search_regex[(path, content_type)] = re.compile(r'^%s(%s)*$' % (path, pattern))
+        return self.search_regex[(path, content_type)]
 
     def get_cache_key(self, path, options):
         return '%s:bundle:%s' % (path, 1 if options.get('bundle') else 0)

@@ -5,20 +5,26 @@ from .. import finder, settings
 
 register = Library()
 
+MIMETYPES = {
+    'javascript': 'application/javascript',
+    'stylesheet': 'text/css'
+}
+
 
 class AssetNode(Node):
-    def __init__(self, name, debug, nodelist):
+    def __init__(self, name, mimetype, debug, nodelist):
         self.name = name
-        self.debug = debug
         self.nodelist = nodelist
         self.asset = None
+        self.options = {
+            'content_type': mimetype,
+            'bundle': not settings.DEBUG and (settings.DEBUG and not debug)
+        }
 
     def render(self, context):
         if not self.asset:
-            self.asset = finder.find(self.name)
-        if settings.DEBUG or self.debug:
-            return '\n'.join([self.render_asset(a, context) for a in self.asset])
-        return self.render_asset(self.asset, context)
+            self.asset = finder.find(self.name, **self.options)
+        return '\n'.join([self.render_asset(a, context) for a in self.asset])
 
     def render_asset(self, asset, context):
         context['asset'] = asset
@@ -35,4 +41,4 @@ def asset(parser, token):
     nodelist = parser.parse(('end%s' % tag,))
     parser.delete_first_token()
 
-    return AssetNode(name, debug, nodelist)
+    return AssetNode(name, MIMETYPES[tag], debug, nodelist)

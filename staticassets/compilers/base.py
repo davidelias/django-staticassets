@@ -5,6 +5,7 @@ from staticassets.filters import BaseFilter, CommandMixin, get_filter
 
 
 _compilers = {}
+_mimetypes = {}
 
 
 class BaseCompiler(BaseFilter):
@@ -25,3 +26,10 @@ def _get_compiler(extension):
         if ext == extension:
             return get_filter(compiler)
 get = memoize(_get_compiler, _compilers, 1)
+
+
+def get_mimetypes():
+    if not _mimetypes:
+        for ext in settings.COMPILERS.keys():
+            _mimetypes[ext] = get(ext).content_type
+    return _mimetypes

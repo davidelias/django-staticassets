@@ -15,8 +15,6 @@ DIRS = getattr(settings, 'STATICASSETS_DIRS', getattr(settings, 'STATICFILES_DIR
 
 CACHE_DIR = os.path.join(getattr(settings, 'STATIC_ROOT', '/tmp'), 'staticassets-cache')
 
-print CACHE_DIR
-
 FINDER = getattr(settings, 'STATICASSETS_FINDER', 'staticassets.finder.AssetFinder')
 
 PREPROCESSORS = getattr(settings, 'STATICASSETS_PREPROCESSORS', (

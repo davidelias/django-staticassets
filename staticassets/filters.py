@@ -6,6 +6,7 @@ from django.utils.functional import memoize
 from .utils import get_class
 
 _filters = SortedDict()
+_processes = SortedDict()
 
 
 class BaseFilter(object):
@@ -56,6 +57,12 @@ def get_filter(filter_conf):
 def _get_filter(import_path, key, args, kwargs):
     return get_class(import_path, BaseFilter)(*args, **kwargs)
 get_cached_filter = memoize(_get_filter, _filters, 2)
+
+
+def _get_process(key, args):
+    print _processes
+    return Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+get_process = memoize(_get_process, _processes, 1)
 
 
 def get_arguments(conf):
