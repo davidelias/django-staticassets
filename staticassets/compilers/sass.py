@@ -17,3 +17,7 @@ class SassCompiler(CommandCompiler):
             args.append('--scss')
         args += ['-I', self.asset.storage.path(self.asset.attributes.dirname)]
         return args
+
+    def compile(self, asset):
+        self.asset = asset
+        return super(SassCompiler, self).compile(asset)
