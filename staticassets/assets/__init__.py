@@ -80,8 +80,7 @@ class Asset(object):
 
     @property
     def expired(self):
-        for dependency in self.dependencies:
-            path, mtime, digest = dependency
+        for path, mtime, digest in self.dependencies:
             stat = os.stat(path)
             if not stat:
                 return True
@@ -89,7 +88,6 @@ class Asset(object):
                 return True
             if digest != utils.get_path_digest(path):
                 return True
-
         return False
 
     def process(self, processors=None):
@@ -113,7 +111,7 @@ class Asset(object):
 
     def depend_on_asset(self, asset):
         if not isinstance(asset, Asset):
-            asset = self.finder.find(asset, bundle=False)
+            asset = self.find_asset(asset)
 
         if asset.path == self.path:
             self.depend_on([self.path, self.mtime, self.digest])
@@ -122,12 +120,16 @@ class Asset(object):
 
     def require_asset(self, asset):
         if not isinstance(asset, Asset):
-            asset = self.finder.find(asset, bundle=False, calls=self.calls)
+            asset = self.find_asset(asset, calls=self.calls)
 
         if not asset.path in self._required_paths:
             self._required_paths.append(asset.path)
             self.requirements.append(asset)
             self.depend_on_asset(asset)
+
+    def find_asset(self, path, **kwargs):
+        return self.finder.find(path, bundle=False,
+            content_type=self.attributes.content_type, **kwargs)
 
     # Cache/Pickling ============================
 
@@ -178,7 +180,7 @@ class AssetBundle(Asset):
         self.mtime = max([d[1] for d in self.dependencies])
 
     def __iter__(self):
-        return iter(self.asset)
+        yield self
 
     @property
     def expired(self):
