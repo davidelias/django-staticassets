@@ -1,6 +1,6 @@
 import os
 import codecs
-from setuptools import setup
+from setuptools import setup, find_packages
 
 README = codecs.open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
 
@@ -9,12 +9,12 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-staticassets',
-    version='0.1',
-    packages=['staticassets'],
+    version='0.1.1',
+    packages=find_packages(),
     include_package_data=True,
     license='MIT License',
     description='Compiles and bundles static assets. Uses a directive processor similiar to Ruby\'s Sprockets',
-    long_description=README,
+    long_description=open('README.rst').read(),
     url='https://github.com/davidelias/django-staticassets',
     author='David Elias',
     author_email='david@david-elias.net',

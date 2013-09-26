@@ -79,3 +79,11 @@ scripts::
 
   //= require foundation/jquery
   //= require foundation
+
+
+Changelog
+=========
+
+- 0.1 initial version
+
+- 0.1.1 fix pypi package missing packages
