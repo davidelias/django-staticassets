@@ -1,0 +1,9 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+# run
+install:
+  - "pip install django==1.4.7"
+script:
+ - "./runtests.sh"
