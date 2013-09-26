@@ -12,13 +12,13 @@ MIMETYPES = {
 
 
 class AssetNode(Node):
-    def __init__(self, name, mimetype, debug, nodelist):
+    def __init__(self, name, mimetype, nodelist):
         self.name = name
         self.nodelist = nodelist
         self.asset = None
         self.options = {
             'content_type': mimetype,
-            'bundle': not settings.DEBUG and (settings.DEBUG and not debug)
+            'bundle': not settings.DEBUG
         }
 
     def render(self, context):
@@ -37,8 +37,7 @@ def asset(parser, token):
     bits = token.split_contents()
     tag = bits.pop(0)
     name = bits.pop(0).strip('"').strip("'")
-    debug = True if bits and bits.pop() == 'debug' else False
     nodelist = parser.parse(('end%s' % tag,))
     parser.delete_first_token()
 
-    return AssetNode(name, MIMETYPES[tag], debug, nodelist)
+    return AssetNode(name, MIMETYPES[tag], nodelist)
