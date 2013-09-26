@@ -1,0 +1,164 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configuration &mdash; django-staticassets 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="django-staticassets 0.1.2 documentation" href="index.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">django-staticassets 0.1.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<p>In your project settings, override Django&#8217;s default static files storage with the staticassets storage to compile and collect your assets to be served in production,
+and define which manifests you want to compile</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">STATICFILES_STORAGE</span> <span class="o">=</span> <span class="s">&#39;staticassets.storage&#39;</span>
+
+<span class="n">STATICASSETS_MANIFESTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;css/application&#39;</span><span class="p">,</span> <span class="s">&#39;js/application&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="templates">
+<h2>Templates<a class="headerlink" href="#templates" title="Permalink to this headline">¶</a></h2>
+<p>In the templates file, load the staticassets and link your manifests (no need to specify the file extension), the path is appended to the <tt class="docutils literal"><span class="pre">STATIC_ROOT</span></tt> location</p>
+<div class="highlight-html"><div class="highlight"><pre>{% load staticassets %}
+
+{% block stylesheets %}
+  {% stylesheet &quot;css/application&quot; %}
+    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">href=</span><span class="s">&quot;{{ asset.url }}&quot;</span><span class="nt">/&gt;</span>
+  {% endstylesheet %}
+{% endblock %}
+
+{% block javascripts %}
+  {% javascript &quot;js/application&quot; %}
+    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;{{ asset.url }}&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+  {% endjavascript %}
+{% endblock %}
+</pre></div>
+</div>
+</div>
+<div class="section" id="manifests-files">
+<h2>Manifests files<a class="headerlink" href="#manifests-files" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">staticassets</span></tt> uses the same directives syntax  and preprocessing as  <a class="reference external" href="http://guides.rubyonrails.org/asset_pipeline.html#manifest-files-and-directives">Sprockets</a>
+you can use <a class="reference external" href="http://sass-lang.com/">Sass</a>,  <a class="reference external" href="http://lesscss.org/">Less</a> and <a class="reference external" href="http://learnboost.github.io/stylus/">Stylus</a> for stylesheets, and <a class="reference external" href="http://coffeescript.org/">Coffeescript</a> or <a class="reference external" href="http://embeddedjs.com/">EJS</a> for scripts, Their compilers just have to be available on the path</p>
+<div class="section" id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
+<p>stylesheets:</p>
+<div class="highlight-python"><pre>*= require application/styles/fonts/lato
+*= require application/styles/fonts/awesome</pre>
+</div>
+<p>scripts:</p>
+<div class="highlight-python"><pre>//= require foundation/jquery
+//= require foundation</pre>
+</div>
+</div>
+</div>
+<div class="section" id="compiling-and-collecting">
+<h2>Compiling and collecting<a class="headerlink" href="#compiling-and-collecting" title="Permalink to this headline">¶</a></h2>
+<p>To compile and collect your assets to the <tt class="docutils literal"><span class="pre">STATIC_ROOT</span></tt> location, use the <tt class="docutils literal"><span class="pre">collectstatic</span></tt> command</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>manage.py collectstatic
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Configuration</a><ul>
+<li><a class="reference internal" href="#templates">Templates</a></li>
+<li><a class="reference internal" href="#manifests-files">Manifests files</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#compiling-and-collecting">Compiling and collecting</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/configuration.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">django-staticassets 0.1.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, David Elias.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,17 +1,28 @@
-Django Static Assets
-=====================
+Django Static Assets Documentation
+==================================
 
 :Authors:
    David Elias <stout.elias@gmail.com> and Joao Oliveira <joaoxsouls@gmail.com>
-:Version: 0.1.2
+:Version: |version|
 
 django-staticassets is a django app to compile and bundle static assets.
 It works together with django's contrib staticfiles app. Heavly inspired by ruby's
 `Sprockets <https://github.com/sstephenson/sprockets>`_.
 It has the same directive processor to declare dependencies directly in asset source files.
 
+Contents:
 
-Documentation
-=============
+.. toctree::
+   :maxdepth: 3
 
-Documentation is on the excellent `readthedocs.org <https://django-staticassets.readthedocs.org/>`_
+   installation.rst
+   configuration.rst
+   compilation.rst
+   contributing.rst
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

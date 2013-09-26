@@ -1,16 +1,13 @@
 import os
-import codecs
 from setuptools import setup, find_packages
-
-README = codecs.open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-staticassets',
-    version='0.1.1',
-    packages=find_packages(),
+    version='0.1.2',
+    packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
     license='MIT License',
     description='Compiles and bundles static assets. Uses a directive processor similiar to Ruby\'s Sprockets',
