@@ -4,6 +4,10 @@ python:
   - "2.7"
 # run
 install:
-  - "pip install django==1.4.7"
+  - pip install -r tests/requirements.txt
+  - rvm use 1.9.3
+  - gem install sass compass
+  - nvm use 0.10
+  - npm install coffee-script less stylus underscore
 script:
- - "./runtests.sh"
+ - django-admin.py test --settings=tests.settings -v 2
