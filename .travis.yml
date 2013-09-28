@@ -4,7 +4,7 @@ python:
   - "2.7"
 # run
 install:
-  - pip install -r tests/requirements.txt
+  - pip install -r tests/requirements.txt --use-mirrors
   - rvm use 1.9.3
   - gem install sass compass
   - nvm use 0.10

@@ -18,6 +18,7 @@ Contents:
    installation.rst
    configuration.rst
    compilation.rst
+   changelog.rst
    contributing.rst
 
 Indices and tables
