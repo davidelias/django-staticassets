@@ -105,4 +105,6 @@ class AssetTest(TestCase):
         self.assertRaises(CircularDependencyError, self.finder.find, 'circular/c.js')
 
     def test_require_directory(self):
-        self.assertEqual(u'var A = {};\nvar B = {};\n', self.finder.find('base.js', bundle=True).content)
+        content = self.finder.find('base.js', bundle=True).content
+        self.assertIn(u'var A = {};\n', content)
+        self.assertIn(u'var B = {};\n', content)
