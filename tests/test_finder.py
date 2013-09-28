@@ -25,9 +25,6 @@ class FinderTest(TestCase):
         name, storage = self.finder.resolve('app')
         self.assertEqual(self.fixture_path('app.js'), storage.path(name))
 
-        name, storage = self.finder.resolve('plugin.jquery')
-        self.assertEqual(self.fixture_path('plugin.jquery.js'), storage.path(name))
-
     def test_resolve_file_with_multiple_extensions(self):
         name, storage = self.finder.resolve('style.css')
         self.assertEqual(self.fixture_path('style.css.sass'), storage.path(name))
@@ -36,7 +33,7 @@ class FinderTest(TestCase):
         self.assertEqual('models/index.js', self.finder.find('models').name)
 
     def test_cached_assets_equal(self):
-        asset1 = self.finder.find('app.js')
-        asset2 = self.finder.find('app.js')
+        asset1 = self.finder.find('app.js').content
+        asset2 = self.finder.find('app.js').content
 
-        self.assertTrue(asset1 is asset2)
+        self.assertEqual(asset1, asset2)

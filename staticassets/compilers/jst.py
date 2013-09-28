@@ -28,5 +28,6 @@ class JstCompiler(BaseCompiler):
 
 
 class EjsCompiler(CommandCompiler):
+    content_type = 'application/javascript'
     command = 'node'
     params = ['-i', '-e', EJS_COMPILER]

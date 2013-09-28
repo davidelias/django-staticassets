@@ -88,8 +88,8 @@ class CompilersTest(TestCase):
     def test_compile_sass(self):
         self.assertEqual(SASS_TEST, finder.find('foo.sass').content.strip('\n'))
 
-    def test_compile_scss_with_compass(self):
-        self.assertEqual(SCSS_TEST, finder.find('compass.scss').content.strip('\n'))
+    # def test_compile_scss_with_compass(self):
+    #     self.assertEqual(SCSS_TEST, finder.find('compass.scss').content.strip('\n'))
 
     def test_compile_stylus(self):
         self.assertEqual(STYLUS_TEST, finder.find('stylus.styl').content.strip('\n'))

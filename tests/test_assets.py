@@ -70,10 +70,8 @@ class AssetTest(TestCase):
 
     def test_asset_url(self):
         self.assertEqual('/static/style.css', self.finder.find('style').url)
-        self.assertEqual('/static/style.min.css', self.finder.find('style.min.sass').url)
         self.assertEqual('/static/foo.js', self.finder.find('foo.coffee').url)
         self.assertEqual('/static/foo.js', self.finder.find('foo.js').url)
-        self.assertEqual('/static/plugin.jquery.js', self.finder.find('plugin.jquery.js').url)
 
     def test_dependencies(self):
         asset = self.finder.find('app.js')
@@ -107,4 +105,4 @@ class AssetTest(TestCase):
         self.assertRaises(CircularDependencyError, self.finder.find, 'circular/c.js')
 
     def test_require_directory(self):
-        self.assertEqual('var A = {};\nvar B = {};\n', self.finder.find('base.js', bundle=True).content)
+        self.assertEqual(u'var A = {};\nvar B = {};\n', self.finder.find('base.js', bundle=True).content)

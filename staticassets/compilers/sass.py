@@ -1,5 +1,3 @@
-import re
-
 from .base import CommandCompiler
 
 
@@ -7,7 +5,7 @@ class SassCompiler(CommandCompiler):
     content_type = 'text/css'
     options = {'compass': False, 'scss': False}
     command = 'sass'
-    params = ['-s', '-g', '--trace']
+    params = ['-s', '--trace']
 
     def get_args(self):
         args = super(SassCompiler, self).get_args()
