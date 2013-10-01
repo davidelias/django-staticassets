@@ -23,5 +23,5 @@ class StaticAssetsStorage(StaticFilesStorage):
                 os.remove(self.path(asset.name))
             except OSError:
                 pass
-            self.save(asset.name, ContentFile(asset.content))
+            self.save(asset.name, ContentFile(asset.content.encode('UTF-8')))
         return []
