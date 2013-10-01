@@ -10,4 +10,4 @@ install:
   - nvm use 0.10
   - npm install coffee-script less stylus underscore
 script:
- - django-admin.py test --settings=tests.settings -v 2
+ - django-admin.py test --settings=tests.settings -v 2 --with-spec -x

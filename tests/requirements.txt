@@ -1,4 +1,5 @@
 django==1.4.7
 django_nose==1.2
+pinocchio==0.3.1
 unittest2==0.5.1
 -e .

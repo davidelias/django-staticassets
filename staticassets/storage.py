@@ -6,6 +6,7 @@ from django.contrib.staticfiles.storage import StaticFilesStorage
 from .finder import default_finder as finder
 from . import settings
 
+
 class StaticAssetsStorage(StaticFilesStorage):
 
     def post_process(self, paths, dry_run=False, **options):
