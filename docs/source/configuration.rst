@@ -60,3 +60,7 @@ To compile and collect your assets to the ``STATIC_ROOT`` location, use the ``co
 .. code-block:: bash
 
    $ manage.py collectstatic
+
+Aditional compilers
+-------------------
+If you need to develop an aditional compiler for css or javascript, just follow the same directives as the other `compilers <https://github.com/davidelias/django-staticassets/blob/master/staticassets/compilers/coffeescript.py#L4>`_ : extend them from the ``CommandCompiler`` and specify the command and the params, then add them to the ``COMPILERS`` dictionary on the ``static`` assets settings
