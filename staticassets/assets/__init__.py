@@ -1,5 +1,7 @@
 import os
 import sys
+import logging
+
 from time import time
 
 from django.contrib.staticfiles.storage import StaticFilesStorage
@@ -12,35 +14,43 @@ from ..exceptions import CircularDependencyError
 from .attributes import AssetAttributes
 
 
+logger = logging.getLogger(__name__)
+
+
+class AssetCacheMixin(object):
+
+    def __getstate__(self):
+        return {
+            'name': self.name,
+            'mtime': self.mtime,
+            'content': self.content,
+            'content_type': self.attributes.content_type,
+            'location': self.storage.location
+        }
+
+    def __setstate__(self, state):
+        self.name = state['name']
+        self.mtime = state['mtime']
+        self.content = state['content']
+
+        self.attributes = AssetAttributes(self.name, state['content_type'])
+        self.storage = StaticFilesStorage(location=state['location'])
+        self.finder = staticassets.finder
+
+
 class Asset(object):
 
-    def __init__(self, name, storage, content_type=None, calls=set()):
+    def __init__(self, name, storage, content_type=None):
         self.name = name
         self.storage = StaticFilesStorage(location=storage.location)
         self.attributes = AssetAttributes(name, content_type)
         self.finder = staticassets.finder
 
-        # prevent require the same dependency per asset
-        # copied from http://github.com/gears/gears
-        self.calls = calls.copy()
-        if self.path in self.calls:
-            raise CircularDependencyError("'%s' has already been required" % self.path)
-        self.calls.add(self.path)
-
     def __repr__(self):
         return '<%s path=%s>' % (self.__class__.__name__, self.path)
 
     def __iter__(self):
-        for requirement in self.requirements:
-            for asset in requirement:
-                yield asset
         yield self
-
-    def _reset(self):
-        self._required_paths = []
-        self.dependencies = []
-        self.requirements = []
-        self.depend_on_asset(self)
 
     @staticmethod
     def create(*args, **kwargs):
@@ -59,11 +69,11 @@ class Asset(object):
 
     content = property(_get_content, _set_content)
 
-    @property
+    @cached_property
     def size(self):
         return len(self.content)
 
-    @property
+    @cached_property
     def digest(self):
         return utils.get_digest(self.content)
 
@@ -80,15 +90,30 @@ class Asset(object):
 
     @property
     def expired(self):
-        for path, mtime, digest in self.dependencies:
-            stat = os.stat(path)
-            if not stat:
-                return True
-            if stat.st_mtime > mtime:
-                return True
-            if digest != utils.get_path_digest(path):
-                return True
         return False
+
+
+class AssetProcessed(Asset, AssetCacheMixin):
+    def __init__(self, *args, **kwargs):
+        calls = kwargs.pop('calls', set())
+        super(AssetProcessed, self).__init__(*args, **kwargs)
+
+        # prevent require the same dependency per asset
+        # copied from http://github.com/gears/gears
+        self.calls = calls.copy()
+        if self.path in self.calls:
+            raise CircularDependencyError("'%s' has already been required" % self.path)
+        self.calls.add(self.path)
+
+        self.mtime = os.path.getmtime(self.path)
+        self.process()
+        self.mtime = max([d[1] for d in self.dependencies])
+
+    def _reset(self):
+        self._required_paths = []
+        self.dependencies = []
+        self.requirements = []
+        self.depend_on_asset(self)
 
     def process(self, processors=None):
         self._reset()
@@ -98,7 +123,19 @@ class Asset(object):
             processor(self)
         stop = time()
         duration = stop - start
-        sys.stdout.write('Processed %s in %.3f\n' % (self.name, duration))
+        logger.debug('Processed %s in %.3f\n' % (self.name, duration))
+
+    @property
+    def expired(self):
+        for path, mtime, digest in self.dependencies:
+            stat = os.stat(path)
+            if not stat:
+                return True
+            if stat.st_mtime > mtime:
+                return True
+            if digest != utils.get_path_digest(path):
+                return True
+        return False
 
     # Dependencies ==============================
 
@@ -131,60 +168,42 @@ class Asset(object):
         return self.finder.find(path, bundle=False,
             content_type=self.attributes.content_type, **kwargs)
 
-    # Cache/Pickling ============================
+    def __iter__(self):
+        for requirement in self.requirements:
+            for asset in requirement:
+                yield asset
+        yield self
 
     def __getstate__(self):
-        return {
-            'name': self.name,
-            'mtime': self.mtime,
-            'content': self.content,
-            'dependencies': self.dependencies,
-            'requirements': self.requirements,
-            '_required_paths': getattr(self, '_required_paths', []),
-            'calls': self.calls,
-            'content_type': self.attributes.content_type,
-            'location': self.storage.location
-        }
+        state = super(AssetProcessed, self).__getstate__()
+        state['calls'] = self.calls
+        state['dependencies'] = self.dependencies
+        state['requirements'] = self.requirements
+        state['_required_paths'] = getattr(self, '_required_paths', [])
+        return state
 
     def __setstate__(self, state):
-        self.name = state['name']
-        self.mtime = state['mtime']
-        self.content = state['content']
+        super(AssetProcessed, self).__setstate__(state)
+        self.calls = state['calls']
         self.dependencies = state['dependencies']
         self.requirements = state['requirements']
         self._required_paths = state['_required_paths']
-        self.calls = state['calls']
-
-        self.attributes = AssetAttributes(self.name, state['content_type'])
-        self.storage = StaticFilesStorage(location=state['location'])
-        self.finder = staticassets.finder
 
 
-class AssetProcessed(Asset):
-    def __init__(self, *args, **kwargs):
-        super(AssetProcessed, self).__init__(*args, **kwargs)
-
-        self.mtime = os.path.getmtime(self.path)
-        self.process()
-        self.mtime = max([d[1] for d in self.dependencies])
-
-
-class AssetBundle(Asset):
+class AssetBundle(Asset, AssetCacheMixin):
     def __init__(self, *args, **kwargs):
         super(AssetBundle, self).__init__(*args, **kwargs)
 
         self.asset = self.finder.find(self.name, bundle=False)
-        self.dependencies = self.asset.dependencies
-        self.requirements = list(self.asset)
-        self.content = ''.join([asset.content for asset in self.requirements])
-        self.mtime = max([d[1] for d in self.dependencies])
-
-    def __iter__(self):
-        yield self
+        self.content = ''.join([asset.content for asset in self.asset])
+        self.mtime = self.asset.mtime
 
     @property
     def expired(self):
         return self.asset.expired
+
+    def __iter__(self):
+        yield self
 
     def __getstate__(self):
         state = super(AssetBundle, self).__getstate__()
