@@ -60,7 +60,7 @@ class AssetAttributes(object):
             if ext in settings.MIMETYPES and not compilers.get(ext):
                 return ext
         for ext, mimetype in settings.MIMETYPES.items():
-            if mimetype == self.compiler_content_type:
+            if mimetype == self.content_type:
                 return ext
 
     @cached_property
