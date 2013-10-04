@@ -10,4 +10,5 @@ install:
   - nvm use 0.10
   - npm install coffee-script less stylus underscore
 script:
+ - flake8 --ignore=E128,E501,F403,F401 staticassets/
  - django-admin.py test --settings=tests.settings -v 2 --with-spec -x
