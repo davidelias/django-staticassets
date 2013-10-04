@@ -10,19 +10,18 @@ from . import settings
 class StorageTest(TestCase):
     def setUp(self):
         self.finder = StaticFilesFinder()
-        self.path = settings.STATICASSETS_MANIFESTS[0]
+        self.storage = StaticAssetsStorage()
 
     def tearDown(self):
         super(StorageTest, self).tearDown()
 
-        try:
-            os.remove(self.path)
-        except OSError:
-            pass
+        for name in settings.STATICASSETS_MANIFESTS:
+            self.storage.delete(name)
 
     def test_collectstatic_collects_file(self):
-        StaticAssetsStorage().post_process([])
+        self.storage.post_process([])
 
-        manifest = self.finder.find(self.path, bundle=True)
-        file = read_file(self.path)
-        self.assertEqual(file, manifest.content)
+        for name in settings.STATICASSETS_MANIFESTS:
+            asset = self.finder.find(name, bundle=True)
+            content = read_file(self.storage.path(name))
+            self.assertEqual(content, asset.content)
