@@ -13,6 +13,8 @@ class StorageTest(TestCase):
         self.path = settings.STATICASSETS_MANIFESTS[0]
 
     def tearDown(self):
+        super(StorageTest, self).tearDown()
+
         try:
             os.remove(self.path)
         except OSError:

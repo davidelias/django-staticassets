@@ -33,7 +33,7 @@ class FinderTest(TestCase):
         self.assertEqual('models/index.js', self.finder.find('models').name)
 
     def test_cached_assets_equal(self):
-        asset1 = self.finder.find('app.js').content
-        asset2 = self.finder.find('app.js').content
+        asset1 = self.finder.find('app.js')
+        asset2 = self.finder.find('app.js')
 
-        self.assertEqual(asset1, asset2)
+        self.assertTrue(asset1 is asset2)
