@@ -1,8 +1,10 @@
 import os
 
+DEBUG = True
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+STATIC_ROOT = BASE_DIR
 
 DATABASES = {
     'default': {

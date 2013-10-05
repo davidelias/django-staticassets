@@ -18,8 +18,11 @@ class StorageTest(TestCase):
         for name in settings.STATICASSETS_MANIFESTS:
             self.storage.delete(name)
 
-    def test_collectstatic_collects_file(self):
-        self.storage.post_process([])
+    def test_collectstatic_post_process(self):
+        for result in self.storage.post_process([]):
+            self.assertEqual((
+                self.fixture_path('app.js'), self.storage.path('app.js'), True
+            ), result)
 
         for name in settings.STATICASSETS_MANIFESTS:
             asset = self.finder.find(name, bundle=True)

@@ -37,4 +37,4 @@ COMPILERS.update(**getattr(settings, 'STATICASSETS_COMPILERS', {}))
 
 AVAILABLE_EXTENSIONS = MIMETYPES.keys() + COMPILERS.keys()
 
-STATICASSETS_MANIFESTS = ('app.js',)
+MANIFESTS = getattr(settings, 'STATICASSETS_MANIFESTS', tuple())

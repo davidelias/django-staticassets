@@ -107,7 +107,6 @@ class AssetProcessed(Asset, AssetCacheMixin):
 
         self.mtime = os.path.getmtime(self.path)
         self.process()
-        self.mtime = max([d[1] for d in self.dependencies])
 
     def _reset(self):
         self._required_paths = []
@@ -124,6 +123,8 @@ class AssetProcessed(Asset, AssetCacheMixin):
         stop = time()
         duration = stop - start
         logger.debug('Processed %s in %.3f\n' % (self.name, duration))
+
+        self.mtime = max([d[1] for d in self.dependencies])
 
     @property
     def expired(self):
@@ -194,22 +195,19 @@ class AssetBundle(Asset, AssetCacheMixin):
     def __init__(self, *args, **kwargs):
         super(AssetBundle, self).__init__(*args, **kwargs)
 
-        self.asset = self.finder.find(self.name, bundle=False)
-        self.content = ''.join([asset.content for asset in self.asset])
-        self.mtime = self.asset.mtime
+        self.processed = self.finder.find(self.name, bundle=False)
+        self.content = ''.join([asset.content for asset in self.processed])
+        self.mtime = self.processed.mtime
 
     @property
     def expired(self):
-        return self.asset.expired
-
-    def __iter__(self):
-        yield self
+        return self.processed.expired
 
     def __getstate__(self):
         state = super(AssetBundle, self).__getstate__()
-        state['asset'] = self.asset
+        state['processed'] = self.processed
         return state
 
     def __setstate__(self, state):
         super(AssetBundle, self).__setstate__(state)
-        self.asset = state['asset']
+        self.processed = state['processed']
