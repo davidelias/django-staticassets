@@ -19,18 +19,13 @@ In the templates file, load the staticassets and link your manifests (no need to
 
   {% load staticassets %}
 
-  {% block stylesheets %}
     {% stylesheet "css/application" %}
       <link rel="stylesheet" href="{{ asset.url }}"/>
     {% endstylesheet %}
-  {% endblock %}
 
-  {% block javascripts %}
     {% javascript "js/application" %}
       <script src="{{ asset.url }}"></script>
     {% endjavascript %}
-  {% endblock %}
-
 
 Manifests files
 ---------------
@@ -43,8 +38,10 @@ Example
 
 stylesheets::
 
-   *= require application/styles/fonts/lato
-   *= require application/styles/fonts/awesome
+   /*
+    *= require application/styles/fonts/lato
+    *= require application/styles/fonts/awesome
+   */
 
 scripts::
 
