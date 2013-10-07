@@ -7,7 +7,7 @@ Django Static Assets
 
 :Authors:
    David Elias <stout.elias@gmail.com> and Joao Oliveira <joaoxsouls@gmail.com>
-:Version: 0.1.6
+:Version: 0.2.0
 
 django-staticassets is a django app to compile and bundle static assets.
 It works together with django's contrib staticfiles app. Heavly inspired by ruby's
