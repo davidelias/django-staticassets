@@ -27,5 +27,5 @@ class StaticAssetsStorage(StaticFilesStorage):
             asset = AssetBundle(*finder.resolve(path))
             for dependency in asset.processed:
                 self.delete(self.path(dependency.name))
-            self.save(asset.name, ContentFile(asset.content.encode('utf-8')))
+            self.save(asset.attributes.format_name, ContentFile(asset.content.encode('utf-8')))
             yield asset.path, self.path(asset.name), True

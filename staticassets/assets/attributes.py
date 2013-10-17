@@ -63,6 +63,10 @@ class AssetAttributes(object):
             if mimetype == self.content_type:
                 return ext
 
+    @property
+    def format_name(self):
+        return self.path_without_extensions + self.suffix + self.format_extension
+
     @cached_property
     def content_type(self):
         if self._content_type:

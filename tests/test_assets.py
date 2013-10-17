@@ -53,6 +53,10 @@ class AssetTest(TestCase):
         self.assertEqual('.js', AssetAttributes('foo/bar.min.coffee').format_extension)
         self.assertEqual('.css', AssetAttributes('foo/bar.sass').format_extension)
 
+    def test_attributes_format_name(self):
+        self.assertEqual('foo/bar.css', AssetAttributes('foo/bar.sass').format_name)
+        self.assertEqual('foo/bar.min.css', AssetAttributes('foo/bar.min.sass').format_name)
+
     def test_attributes_path_without_extensions(self):
         self.assertEqual('foo/bar', AssetAttributes('foo/bar.js.coffee').path_without_extensions)
         self.assertEqual('foo', AssetAttributes('foo').path_without_extensions)

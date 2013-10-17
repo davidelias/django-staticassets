@@ -83,10 +83,7 @@ class Asset(object):
 
     @cached_property
     def url(self):
-        return self.storage.url(
-            self.attributes.path_without_extensions +
-            self.attributes.suffix +
-            self.attributes.format_extension)
+        return self.storage.url(self.attributes.format_name)
 
     @property
     def expired(self):
