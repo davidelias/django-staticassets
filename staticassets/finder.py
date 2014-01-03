@@ -89,6 +89,10 @@ def find(*args, **kwargs):
     return default_finder.find(*args, **kwargs)
 
 
+def resolve(*args, **kwargs):
+    return default_finder.resolve(*args, **kwargs)
+
+
 default_finder = SimpleLazyObject(lambda: get_class(settings.FINDER, BaseAssetFinder)())
 
 StaticFilesFinder = AssetFinder
