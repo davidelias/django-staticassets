@@ -1,20 +1,22 @@
 import os
-import sys
 import logging
 
 from time import time
 
-from django.contrib.staticfiles.storage import StaticFilesStorage
+from django.conf import settings as django_settings
+from django.core.files.storage import get_storage_class
 from django.utils.functional import cached_property
-
-import staticassets
 
 from .. import utils
 from ..exceptions import CircularDependencyError
 from .attributes import AssetAttributes
 
+import staticassets
+
 
 logger = logging.getLogger(__name__)
+
+Storage = get_storage_class(django_settings.STATICFILES_STORAGE)
 
 
 class AssetCacheMixin(object):
@@ -34,15 +36,15 @@ class AssetCacheMixin(object):
         self.content = state['content']
 
         self.attributes = AssetAttributes(self.name, state['content_type'])
-        self.storage = StaticFilesStorage(location=state['location'])
-        self.finder = staticassets.finder
+        self.storage = Storage(location=state['location'])
+        self.finder = staticassets.default_finder
 
 
 class Asset(object):
 
     def __init__(self, name, storage, content_type=None):
         self.name = name
-        self.storage = StaticFilesStorage(location=storage.location)
+        self.storage = Storage(location=storage.location)
         self.attributes = AssetAttributes(name, content_type)
         self.finder = staticassets.finder
 

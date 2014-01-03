@@ -7,7 +7,7 @@ from django.contrib.staticfiles import finders
 from django.utils.datastructures import SortedDict
 from django.utils.functional import SimpleLazyObject, memoize
 
-from staticassets import Asset, AssetAttributes
+from .assets import Asset, AssetAttributes
 from .exceptions import AssetNotFound
 from .utils import expand_component_json, get_class
 from . import settings
@@ -84,19 +84,12 @@ class AssetFinder(BaseAssetFinder):
     def get_cache_key(self, path, options):
         return '%s:bundle:%s' % (path, 1 if options.get('bundle') else 0)
 
-StaticFilesFinder = AssetFinder
-
 
 def find(*args, **kwargs):
     return default_finder.find(*args, **kwargs)
 
 
-default_finder = SimpleLazyObject(lambda: get_finder(settings.FINDER))
+default_finder = SimpleLazyObject(lambda: get_class(settings.FINDER, BaseAssetFinder)())
 
+StaticFilesFinder = AssetFinder
 
-_finders = SortedDict()
-
-
-def _get_finder(import_path):
-    return get_class(import_path, BaseAssetFinder)()
-get_finder = memoize(_get_finder, _finders, 1)
