@@ -1,17 +1,16 @@
 import sys
 
 from django.core.files.base import ContentFile
-from django.contrib.staticfiles.storage import StaticFilesStorage
+from django.contrib.staticfiles.storage import StaticFilesStorage, CachedStaticFilesStorage
 
-from .finder import default_finder as finder
-from .assets import AssetBundle
 from . import settings
 
 
-class StaticAssetsStorage(StaticFilesStorage):
+class StaticAssetsMixin(object):
 
     def post_process(self, paths, dry_run=False, **options):
-        sys.stdout.write("\nStarting asset preprocessing...\n")
+        from .assets import AssetBundle
+        from .finder import default_finder as finder
 
         if dry_run:
             return
@@ -27,5 +26,27 @@ class StaticAssetsStorage(StaticFilesStorage):
             asset = AssetBundle(*finder.resolve(path))
             for dependency in asset.processed:
                 self.delete(self.path(dependency.name))
-            self.save(asset.attributes.format_name, ContentFile(asset.content.encode('utf-8')))
-            yield asset.path, self.path(asset.name), True
+
+            name = asset.attributes.format_name
+            # self.delete(self.path(name))
+            self.save(name, ContentFile(asset.content.encode('utf-8')))
+
+            if asset.name in paths:
+                del paths[asset.name]
+                paths[name] = (self, name)
+
+            yield asset.name, name, True
+
+        super_obj = super(StaticAssetsMixin, self)
+        if hasattr(super_obj, 'post_process'):
+            for result in super_obj.post_process(paths, dry_run, **options):
+                yield result
+
+
+class StaticAssetsStorage(StaticAssetsMixin, StaticFilesStorage):
+    pass
+
+
+class CachedStaticAssetsStorage(StaticAssetsMixin, CachedStaticFilesStorage):
+    pass
+
