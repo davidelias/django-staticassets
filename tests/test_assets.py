@@ -1,7 +1,6 @@
 import os
 
-from staticassets import AssetAttributes
-from staticassets.assets import CircularDependencyError
+from staticassets.assets import CircularDependencyError, AssetAttributes
 from staticassets.finder import StaticFilesFinder
 
 from .test import TestCase
