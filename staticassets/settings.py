@@ -22,7 +22,9 @@ PREPROCESSORS = getattr(settings, 'STATICASSETS_PREPROCESSORS', (
     ('text/css', 'staticassets.processors.DirectiveProcessor')
 ))
 
-POSTPROCESSORS = getattr(settings, 'STATICASSETS_POSTPROCESSORS', tuple())
+POSTPROCESSORS = getattr(settings, 'STATICASSETS_POSTPROCESSORS', (
+    ('text/css', 'staticassets.processors.ResolvePathsProcessor'),
+))
 
 COMPILERS = {
     '.sass': 'staticassets.compilers.SassCompiler',
