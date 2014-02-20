@@ -22,7 +22,7 @@ class FinderTest(TestCase):
         self.assertEqual(self.fixture_path('app.js'), storage.path(name))
 
     def test_resolve_file_without_extension(self):
-        name, storage = self.finder.resolve('app')
+        name, storage = self.finder.resolve('app', content_type='application/javascript')
         self.assertEqual(self.fixture_path('app.js'), storage.path(name))
 
     def test_resolve_file_with_multiple_extensions(self):
@@ -36,4 +36,4 @@ class FinderTest(TestCase):
         asset1 = self.finder.find('app.js')
         asset2 = self.finder.find('app.js')
 
-        self.assertTrue(asset1 is asset2)
+        self.assertIs(asset1, asset2)

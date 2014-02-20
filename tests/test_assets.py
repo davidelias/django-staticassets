@@ -109,5 +109,6 @@ class AssetTest(TestCase):
 
     def test_require_directory(self):
         content = self.finder.find('base.js', bundle=True).content
-        self.assertIn(u'var A = {};\n', content)
-        self.assertIn(u'var B = {};\n', content)
+
+        self.assertIn(self.fixture('tree/all/a/a.js'), content)
+        self.assertIn(self.fixture('tree/all/a/b.js'), content)
