@@ -6,10 +6,6 @@ class LessCompiler(CommandCompiler):
     command = 'lessc'
     params = ['-']
 
-    def get_args(self):
-        args = super(LessCompiler, self).get_args()
-        return args + ['--include-path=%s' % self.asset.storage.path(self.asset.attributes.dirname)]
-
-    def compile(self, asset):
-        self.asset = asset
-        return super(LessCompiler, self).compile(asset)
+    def get_args(self, asset):
+        args = super(LessCompiler, self).get_args(asset)
+        return args + ['--include-path=%s' % asset.storage.path(asset.attributes.dirname)]

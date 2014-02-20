@@ -7,15 +7,11 @@ class SassCompiler(CommandCompiler):
     command = 'sass'
     params = ['-s', '--trace']
 
-    def get_args(self):
-        args = super(SassCompiler, self).get_args()
+    def get_args(self, asset):
+        args = super(SassCompiler, self).get_args(asset)
         if self.compass:
             args.append('--compass')
         if self.scss:
             args.append('--scss')
-        args += ['-I', self.asset.storage.path(self.asset.attributes.dirname)]
+        args += ['-I', asset.storage.path(asset.attributes.dirname)]
         return args
-
-    def compile(self, asset):
-        self.asset = asset
-        return super(SassCompiler, self).compile(asset)

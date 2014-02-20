@@ -15,7 +15,7 @@ class BaseProcessor(BaseFilter):
 
 class CommandProcessor(BaseFilter, CommandMixin):
     def process(self, asset):
-        asset.content = self.run(asset.content)
+        asset.content = self.run(asset)
 
 
 def pre(content_type):
@@ -27,7 +27,10 @@ def post(content_type):
 
 
 def bundle(content_type):
-    return get_bundleprocessors(content_type, settings.BUNDLEPROCESSORS)
+    processors = list(settings.BUNDLEPROCESSORS)
+    if settings.COMPRESSION:
+        processors += [(mimetype, compressor) for mimetype, compressor in settings.COMPRESSORS.items()]
+    return get_bundleprocessors(content_type, processors)
 
 
 def _get_processors(content_type, processors_conf):

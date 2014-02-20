@@ -91,6 +91,14 @@ class Asset(object):
     def expired(self):
         return False
 
+    def process(self, processors):
+        start = time()
+        for processor in processors:
+            processor(self)
+        stop = time()
+        duration = stop - start
+        logger.debug('Processed %s in %.3f\n' % (self.name, duration))
+
 
 class AssetProcessed(Asset, AssetCacheMixin):
     def __init__(self, *args, **kwargs):
@@ -105,7 +113,7 @@ class AssetProcessed(Asset, AssetCacheMixin):
         self.calls.add(self.path)
 
         self.mtime = os.path.getmtime(self.path)
-        self.process()
+        self.process(self.attributes.processors)
 
     def _reset(self):
         self._required_paths = []
@@ -113,16 +121,9 @@ class AssetProcessed(Asset, AssetCacheMixin):
         self.requirements = []
         self.depend_on_asset(self)
 
-    def process(self, processors=None):
+    def process(self, *args, **kwargs):
         self._reset()
-
-        start = time()
-        for processor in processors or self.attributes.processors:
-            processor(self)
-        stop = time()
-        duration = stop - start
-        logger.debug('Processed %s in %.3f\n' % (self.name, duration))
-
+        super(AssetProcessed, self).process(*args, **kwargs)
         self.mtime = max([d[1] for d in self.dependencies])
 
     @property
@@ -197,6 +198,7 @@ class AssetBundle(Asset, AssetCacheMixin):
         self.processed = self.finder.find(self.name, bundle=False)
         self.content = ''.join([asset.content for asset in self.processed])
         self.mtime = self.processed.mtime
+        self.process(self.attributes.bundle_processors)
 
     @property
     def expired(self):

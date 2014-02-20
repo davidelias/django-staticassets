@@ -26,6 +26,8 @@ POSTPROCESSORS = getattr(settings, 'STATICASSETS_POSTPROCESSORS', (
     ('text/css', 'staticassets.processors.ResolvePathsProcessor'),
 ))
 
+BUNDLEPROCESSORS = getattr(settings, 'STATICASSETS_BUNDLEPROCESSORS', tuple())
+
 COMPILERS = {
     '.sass': 'staticassets.compilers.SassCompiler',
     '.scss': 'staticassets.compilers.SassCompiler',
@@ -36,6 +38,14 @@ COMPILERS = {
     '.coffee': 'staticassets.compilers.CoffeeScriptCompiler'
 }
 COMPILERS.update(**getattr(settings, 'STATICASSETS_COMPILERS', {}))
+
+COMPRESSION = getattr(settings, 'STATICASSETS_COMPRESSION', not DEBUG)
+
+COMPRESSORS = {
+    'application/javascript': 'staticassets.compressors.UglifyJSCompressor',
+    'text/css': 'staticassets.compressors.YUICompressor'
+}
+COMPRESSORS.update(**getattr(settings, 'STATICASSETS_COMPRESSORS', {}))
 
 AVAILABLE_EXTENSIONS = MIMETYPES.keys() + COMPILERS.keys()
 

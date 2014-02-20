@@ -4,7 +4,7 @@ DEBUG = True
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-STATIC_ROOT = BASE_DIR
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DATABASES = {
     'default': {
@@ -29,6 +29,11 @@ STATICFILES_DIRS = (
 
 STATICASSETS_DEBUG = True
 
+STATICASSETS_COMPRESSION = False
+
 STATIC_URL = '/static/'
 
-STATICASSETS_MANIFESTS = ('app.js',)
+STATICASSETS_MANIFESTS = (
+    'app.js',
+    'app.css',
+)

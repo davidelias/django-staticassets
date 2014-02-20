@@ -4,11 +4,10 @@ import re
 from django.utils.functional import cached_property
 
 from .. import processors, compilers, settings
+from ..utils import get_digest
 
 
-AVAILABLE_EXTENSIONS = {
-
-}
+AVAILABLE_EXTENSIONS = {}
 
 
 class AssetAttributes(object):
@@ -27,6 +26,10 @@ class AssetAttributes(object):
     @property
     def dirname(self):
         return os.path.dirname(self.path)
+
+    @cached_property
+    def path_digest(self):
+        return get_digest(self.path)
 
     @cached_property
     def available_extensions(self):

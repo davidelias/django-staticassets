@@ -33,7 +33,7 @@ class StaticAssetsMixin(object):
 
             if asset.name in paths:
                 del paths[asset.name]
-                paths[name] = (self, name)
+            paths[name] = (self, name)
 
             yield asset.name, name, True
 
@@ -49,4 +49,3 @@ class StaticAssetsStorage(StaticAssetsMixin, StaticFilesStorage):
 
 class CachedStaticAssetsStorage(StaticAssetsMixin, CachedStaticFilesStorage):
     pass
-

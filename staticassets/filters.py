@@ -1,4 +1,4 @@
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 
 from django.utils.datastructures import SortedDict
 from django.utils.functional import memoize
@@ -31,13 +31,13 @@ class CommandMixin(object):
     command = None
     params = []
 
-    def get_args(self):
+    def get_args(self, asset):
         return [self.options.get('command', self.command)] + self.options.get('params', self.params)
 
-    def run(self, input):
-        args = self.get_args()
+    def run(self, asset):
+        args = self.get_args(asset)
         process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        output, errors = process.communicate(input=input.encode('utf-8'))
+        output, errors = process.communicate(input=asset.content.encode('utf-8'))
         if process.returncode != 0:
             raise Exception("'%s'\n%s" % (' '.join(args), errors))
         return output.decode('utf-8')

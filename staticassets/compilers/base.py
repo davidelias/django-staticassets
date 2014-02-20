@@ -16,7 +16,7 @@ class BaseCompiler(BaseFilter):
 class CommandCompiler(BaseCompiler, CommandMixin):
     def compile(self, asset):
         try:
-            asset.content = self.run(asset.content)
+            asset.content = self.run(asset)
         except Exception as e:
             raise Exception("Error compiling '%s' with command %s" % (asset.path, e))
 
