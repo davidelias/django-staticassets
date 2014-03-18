@@ -1,5 +1,6 @@
 from django.template import Library, Node
 
+from ..assets import Asset
 from .. import finder, settings
 
 
@@ -22,9 +23,11 @@ class AssetNode(Node):
         }
 
     def render(self, context):
-        if not self.asset:
-            self.asset = finder.find(self.name, **self.options)
-        return '\n'.join([self.render_asset(a, context) for a in self.asset])
+        if not settings.DEBUG and not self.asset:
+            name, storage = finder.resolve(self.name, **self.options)
+            self.asset = Asset(name, storage, content_type=self.options['content_type'])
+        asset = self.asset or finder.find(self.name, **self.options)
+        return '\n'.join([self.render_asset(a, context) for a in asset])
 
     def render_asset(self, asset, context):
         context['asset'] = asset
