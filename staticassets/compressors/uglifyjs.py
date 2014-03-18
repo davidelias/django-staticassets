@@ -3,4 +3,4 @@ from .base import CommandCompressor
 
 class UglifyJSCompressor(CommandCompressor):
     command = 'uglifyjs'
-    params = ['-c']
+    params = ['-c', '--max-line-len', '32']
