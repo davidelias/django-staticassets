@@ -18,7 +18,7 @@ class AssetAttributes(object):
     @property
     def search_paths(self):
         paths = [self.path]
-        paths.append('%s/component.json' % self.path_without_extensions)
+        paths.append('%s/bower.json' % self.path_without_extensions)
         if os.path.basename(self.path_without_extensions) != 'index':
             paths.append('%s/index%s' % (self.path_without_extensions, ''.join(self.extensions)))
         return paths

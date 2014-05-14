@@ -23,7 +23,7 @@ def get_path_digest(path):
         return get_digest(','.join(os.listdir(path)))
 
 
-def expand_component_json(self, path):
+def expand_component_json(path):
     component = json.loads(read_file(path))
     if not 'main' in component:
         yield
