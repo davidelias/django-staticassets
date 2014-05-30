@@ -16,18 +16,18 @@ class AssetTest(TestCase):
     def test_attributes_search_paths(self):
         self.assertEqual([
             'index.js',
-            'index/component.json'
+            'index/bower.json'
         ], AssetAttributes('index.js').search_paths)
 
         self.assertEqual([
             'foo.min.js',
-            'foo/component.json',
+            'foo/bower.json',
             'foo/index.min.js'
         ], AssetAttributes('foo.min.js').search_paths)
 
         self.assertEqual([
             'bar',
-            'bar/component.json',
+            'bar/bower.json',
             'bar/index'
         ], AssetAttributes('bar').search_paths)
 

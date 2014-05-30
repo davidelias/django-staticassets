@@ -4,4 +4,4 @@ set -e
 
 export PYTHONPATH=$PWD:$PWD/..:$PYTHONPATH
 
-django-admin.py test --settings=tests.settings -v 2
+django-admin.py test --settings=tests.settings -v 2 --with-spec --spec-color
