@@ -24,6 +24,7 @@ PREPROCESSORS = getattr(settings, 'STATICASSETS_PREPROCESSORS', (
 
 POSTPROCESSORS = getattr(settings, 'STATICASSETS_POSTPROCESSORS', (
     ('text/css', 'staticassets.processors.ResolvePathsProcessor'),
+    ('application/javascript', 'staticassets.processors.CommonjsProcessor'),
 ))
 
 BUNDLEPROCESSORS = getattr(settings, 'STATICASSETS_BUNDLEPROCESSORS', tuple())
