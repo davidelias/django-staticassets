@@ -29,13 +29,13 @@ POSTPROCESSORS = getattr(settings, 'STATICASSETS_POSTPROCESSORS', (
 BUNDLEPROCESSORS = getattr(settings, 'STATICASSETS_BUNDLEPROCESSORS', tuple())
 
 COMPILERS = {
-    '.sass': 'staticassets.compilers.SassCompiler',
-    '.scss': 'staticassets.compilers.SassCompiler',
-    '.styl': 'staticassets.compilers.StylusCompiler',
-    '.less': 'staticassets.compilers.LessCompiler',
-    '.jst': 'staticassets.compilers.JstCompiler',
-    '.ejs': 'staticassets.compilers.EjsCompiler',
-    '.coffee': 'staticassets.compilers.CoffeeScriptCompiler'
+    '.sass': 'staticassets.compilers.Sass',
+    '.scss': 'staticassets.compilers.Sass',
+    '.styl': 'staticassets.compilers.Stylus',
+    '.less': 'staticassets.compilers.Less',
+    '.jst': 'staticassets.compilers.Jst',
+    '.ejs': 'staticassets.compilers.Ejs',
+    '.coffee': 'staticassets.compilers.CoffeeScript'
 }
 COMPILERS.update(**getattr(settings, 'STATICASSETS_COMPILERS', {}))
 
