@@ -36,10 +36,13 @@ class CommandMixin(object):
 
     def run(self, asset):
         args = self.get_args(asset)
-        process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        output, errors = process.communicate(input=asset.content.encode('utf-8'))
-        if process.returncode != 0:
-            raise Exception("'%s'\n%s" % (' '.join(args), errors))
+        try:
+            process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            output, errors = process.communicate(input=asset.content.encode('utf-8'))
+            if process.returncode != 0:
+                raise Exception("'%s'\n%s" % (' '.join(args), errors))
+        except Exception as e:
+            raise Exception("'%s'\n%s" % (' '.join(args), e))
         return output.decode('utf-8')
 
 
@@ -60,7 +63,6 @@ get_cached_filter = memoize(_get_filter, _filters, 2)
 
 
 def _get_process(key, args):
-    print _processes
     return Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 get_process = memoize(_get_process, _processes, 1)
 
