@@ -58,9 +58,9 @@ class AssetFinder(BaseAssetFinder):
         for search_path in attrs.search_paths:
             regex = self.get_search_regex(search_path, options.get('content_type'))
             for name, storage in self.list():
-                if search_path.endswith('bower.json') and search_path == name:
-                    for name in expand_component_json(storage.path(name)):
-                        return name, storage
+                if search_path.endswith('.json') and search_path == name:
+                    for expanded_name in expand_component_json(storage.path(name)):
+                        return os.path.join(os.path.dirname(search_path), expanded_name), storage
                 elif regex.search(name):
                     return name, storage
 

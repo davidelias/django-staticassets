@@ -18,7 +18,11 @@ class AssetAttributes(object):
     @property
     def search_paths(self):
         paths = [self.path]
-        paths.append('%s/bower.json' % self.path_without_extensions)
+
+        # https://github.com/bower/json/blob/0.4.0/lib/json.js#L7
+        for name in ('bower.json', 'component.json', '.bower.json'):
+            paths.append('%s/%s' % (self.path_without_extensions, name))
+
         if os.path.basename(self.path_without_extensions) != 'index':
             paths.append('%s/index%s' % (self.path_without_extensions, ''.join(self.extensions)))
         return paths
