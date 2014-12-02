@@ -73,7 +73,7 @@ class Asset(object):
 
     @cached_property
     def size(self):
-        return len(self.content)
+        return len(self.content.encode('utf-8'))
 
     @cached_property
     def digest(self):
