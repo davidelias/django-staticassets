@@ -1,17 +1,21 @@
 import os
 import re
+import logging
+
+from time import time
 
 from django.core.cache import get_cache
 from django.core.files.storage import FileSystemStorage
 from django.contrib.staticfiles import finders
-from django.utils.datastructures import SortedDict
-from django.utils.functional import SimpleLazyObject, memoize
+from django.utils.functional import SimpleLazyObject
 
 from .assets import Asset, AssetAttributes
 from .exceptions import AssetNotFound
 from .utils import expand_component_json, get_class
 from . import settings
 
+
+logger = logging.getLogger(__name__)
 
 cache = SimpleLazyObject(lambda: get_cache('django.core.cache.backends.filebased.FileBasedCache', **{
     'LOCATION': os.path.join(settings.CACHE_DIR),
@@ -40,7 +44,11 @@ class AssetFinder(BaseAssetFinder):
 
     def find(self, path, **options):
         options.setdefault('bundle', False)
+
+        start = time()
         name, storage = self.resolve(path, **options)
+        logger.debug('Resolved %s into %s in %.3f\n' % (path, name, (time() - start)))
+
         key = self.get_cache_key(storage.path(name), options)
         asset = self.assets.get(key, cache.get(key))
         if not asset or asset.expired:
@@ -54,13 +62,14 @@ class AssetFinder(BaseAssetFinder):
         if absolute_path and os.path.isfile(absolute_path):
             return path, FileSystemStorage(location=absolute_path[:-len(path)])
 
-        attrs = AssetAttributes(path)
+        attrs = AssetAttributes(path, content_type=options.get('content_type'))
         for search_path in attrs.search_paths:
             regex = self.get_search_regex(search_path, options.get('content_type'))
             for name, storage in self.list():
                 if search_path.endswith('.json') and search_path == name:
                     for expanded_name in expand_component_json(storage.path(name)):
-                        return os.path.join(os.path.dirname(search_path), expanded_name), storage
+                        if not attrs.content_type or AssetAttributes(expanded_name).content_type == attrs.content_type:
+                            return os.path.join(os.path.dirname(search_path), expanded_name), storage
                 elif regex.search(name):
                     return name, storage
 
