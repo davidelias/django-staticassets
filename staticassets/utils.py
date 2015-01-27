@@ -27,6 +27,7 @@ def expand_component_json(path):
     component = json.loads(read_file(path))
     if not 'main' in component:
         yield
+
     elif isinstance(component['main'], list):
         for name in component['main']:
             yield name

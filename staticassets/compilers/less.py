@@ -8,4 +8,4 @@ class LessCompiler(CommandCompiler):
 
     def get_args(self, asset):
         args = super(LessCompiler, self).get_args(asset)
-        return args + ['--include-path=%s' % asset.storage.path(asset.attributes.dirname)]
+        return args + ['--include-path=%s' % asset.storage.path(asset.attributes.dirname)], {}

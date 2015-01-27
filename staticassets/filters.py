@@ -1,3 +1,5 @@
+import os
+
 from subprocess import Popen, PIPE, check_output
 
 from django.utils.datastructures import SortedDict
@@ -32,17 +34,28 @@ class CommandMixin(object):
     params = []
 
     def get_args(self, asset):
-        return [self.options.get('command', self.command)] + self.options.get('params', self.params)
+        command = self.options.get('command', self.command)
+        if isinstance(command, dict):
+            args = command.pop('args', [])
+            if not isinstance(args, (tuple, list)):
+                args = args.split(' ')
+            return list(args) + self.options.get('params', self.params), command
+        return command.split(' ') + self.options.get('params'), {}
 
     def run(self, asset):
-        args = self.get_args(asset)
-        try:
-            process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            output, errors = process.communicate(input=asset.content.encode('utf-8'))
-            if process.returncode != 0:
-                raise Exception("'%s'\n%s" % (' '.join(args), errors))
-        except Exception as e:
-            raise Exception("'%s'\n%s" % (' '.join(args), e))
+        args, kwargs = self.get_args(asset)
+        kwargs.update({
+            'shell': True,
+            'cwd': os.getcwd(),
+            'stdin': PIPE,
+            'stdout': PIPE,
+            'stderr': PIPE
+        })
+
+        process = Popen(' '.join(args), **kwargs)
+        output, errors = process.communicate(input=asset.content.encode('utf-8'))
+        if process.returncode != 0:
+            raise Exception("'%s'\n%s" % (' '.join(args), errors))
         return output.decode('utf-8')
 
 

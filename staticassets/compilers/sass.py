@@ -8,10 +8,10 @@ class SassCompiler(CommandCompiler):
     params = ['-s', '--trace']
 
     def get_args(self, asset):
-        args = super(SassCompiler, self).get_args(asset)
+        args, kwargs = super(SassCompiler, self).get_args(asset)
         if self.compass:
             args.append('--compass')
         if self.scss:
             args.append('--scss')
         args += ['-I', asset.storage.path(asset.attributes.dirname)]
-        return args
+        return args, kwargs
