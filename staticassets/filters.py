@@ -1,6 +1,6 @@
 import os
 
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE
 
 from django.utils.datastructures import SortedDict
 from django.utils.functional import memoize
@@ -40,7 +40,7 @@ class CommandMixin(object):
             if not isinstance(args, (tuple, list)):
                 args = args.split(' ')
             return list(args) + self.options.get('params', self.params), command
-        return command.split(' ') + self.options.get('params'), {}
+        return command.split(' ') + self.options.get('params', self.params), {}
 
     def run(self, asset):
         args, kwargs = self.get_args(asset)
@@ -51,7 +51,6 @@ class CommandMixin(object):
             'stdout': PIPE,
             'stderr': PIPE
         })
-
         process = Popen(' '.join(args), **kwargs)
         output, errors = process.communicate(input=asset.content.encode('utf-8'))
         if process.returncode != 0:
